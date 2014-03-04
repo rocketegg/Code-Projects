@@ -20,8 +20,12 @@ The variables:
 * Block Size - How often a result is computed (reports start time for request, end time, average time per call (ms) and total time (ms) )
 * Range - How many results to display on screen
 * Polling - Toggle On/Off (this will start polling requests as fast as node.js can handle them.  These are serial in nature).
+* Show Graph - toggle graphing on/off (off will provide better javascript performance)
 
 
 ## Contact
+
+For angular seed, see https://github.com/angular/angular-seed
+For the graphing, see http://bouil.github.io/angular-google-chart/#/fat
 
 For more information on AngularJS please check out http://angularjs.org/
