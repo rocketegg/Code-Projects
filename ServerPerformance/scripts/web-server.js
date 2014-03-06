@@ -102,6 +102,11 @@ StaticServlet.prototype.handleRequest = function(req, res) {
       res.write("Hello: ");
       res.end();
 
+  } else if (path == './version') {
+    res.writeHead(200, {'content-type': 'text/html'});
+      res.write("Node.js version: " + 'v0.10.26');
+      res.end();
+    
   } else {
     var parts = path.split('/');
     if (parts[parts.length-1].charAt(0) === '.')

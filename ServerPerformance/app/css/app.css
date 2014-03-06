@@ -28,3 +28,11 @@
   content: "";
   padding: 0;
 }
+
+.navbar-default.red {
+  background-color:#f2dede;
+}
+
+.navbar-default.blue {
+  background-color:#d9edf7;
+}

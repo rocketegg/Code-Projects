@@ -15,6 +15,9 @@ angular.module('myApp.controllers', []).
 	  $scope.polling = false;
 	  $scope.totalPolled = 0;
 	  $scope.result10 = [];
+	  $scope.stats = {
+
+	  };
 
 
 	  //charting
@@ -48,12 +51,13 @@ angular.module('myApp.controllers', []).
 		  }
 	  }
 
-	  function pushResult(startTime, numreceived) {
+	  function pushResult(startTime, endTime, numreceived) {
 
-	    var endTime = new Date().getTime();
+	    //var endTime = new Date().getTime();
 	    var runTime = endTime - startTime;
 	    var clickTime = startTime;
-	    var timePerCall = runTime / $scope.blockSize;
+	    var blockSize = $scope.blockSize;
+	    var timePerCall = runTime / blockSize;
 	    var aResult = {
 	    	numTimes: numreceived,
 	    	startTime: startTime,
@@ -73,14 +77,26 @@ angular.module('myApp.controllers', []).
 	    if ($scope.chartObject.data.rows.length >= $scope.range) {
 	    	$scope.chartObject.data.rows.splice(0,1);
 	    }
+	    computeRunningAverage(runTime, blockSize);
+
+	    function computeRunningAverage(blocktime, blocksize) {
+	    	if ($scope.stats.runningAverage === undefined) {
+	    		$scope.stats.totalTime = blocktime;
+	    		$scope.stats.totalBlocks = blocksize;
+	    	} else {
+	    		$scope.stats.totalTime += blocktime;
+	    		$scope.stats.totalBlocks += blocksize;
+	    	}
+	    	$scope.stats.runningAverage = Math.round(($scope.stats.totalTime / $scope.stats.totalBlocks) * 10000)/10000;
+	    }
 	  }
 
 	  $scope.startQuery = function() {
-	  	var startTime = new Date().getTime();
 	  	$scope.result = [];
 	  	$scope.chartObject.data.rows=[];
 	  	$scope.result10 = [];
-	  	generateQuery(startTime, 0);
+	  	$scope.stats = {};
+	  	generateQuery(new Date().getTime(), 0);
 	  }
 
 	  function generateQuery(startTime, numReceived) {
@@ -91,15 +107,19 @@ angular.module('myApp.controllers', []).
             // when the response is available
 
             numReceived = numReceived + 1;
+            $scope.numReceived = numReceived;
             if (numReceived % $scope.blockSize == 0) {
-            	pushResult(startTime, numReceived);
+            	var endTime = new Date().getTime();
+            	pushResult(startTime, endTime, numReceived);
             	startTime = new Date().getTime();
             } else if (numReceived == $scope.numTimes) {
-            	pushResult(startTime, numReceived);
+            	var endTime = new Date().getTime();
+            	pushResult(startTime, endTime, numReceived);
             }
             if (numReceived < $scope.numTimes) {
             	generateQuery(startTime, numReceived);
             }
+
           }).
           error(function(data, status, headers, config) {
             // called asynchronously if an error occurs
@@ -128,6 +148,21 @@ angular.module('myApp.controllers', []).
   }])
 
 //chart controller
-  .controller('MyCtrl2', ['$scope', function() {
+  .controller('MyCtrl2', ['$scope', '$http', function($scope, $http) {
+
+  	$scope.version = '';
+  	$scope.init = function () {
+  		$http({method: 'GET', url: '/version'}).
+			success(function(data, status, headers, config) {
+				$scope.version = data;
+			});
+  	}
+
+  	$scope.redTeam = function() {
+  		if ($scope.version.indexOf("Vertx") > -1) {
+  			return true;
+  		}
+  		return false;
+  	}
 
   }]);
