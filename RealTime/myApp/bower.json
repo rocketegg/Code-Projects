@@ -11,6 +11,8 @@
         "angular-bootstrap": "0.10.0",
         "angular-ui-router": "#master",
         "ng-slider": "latest",
-        "angular-sanitize": "latest"
+        "angular-sanitize": "latest",
+        "angular-google-chart": "latest",
+        "jQuery": "latest"
     }
 }

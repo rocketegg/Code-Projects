@@ -48,7 +48,8 @@
     "passport-twitter": "^1.0.2",
     "swig": "^1.3.2",
     "view-helpers": "^0.1.4",
-    "radius": "latest"
+    "radius": "latest",
+    "cron": "latest"
   },
   "devDependencies": {
     "assetmanager": "^0.1.1",

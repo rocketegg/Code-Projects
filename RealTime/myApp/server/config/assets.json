@@ -15,7 +15,7 @@
 			"public/system/lib/angular-sanitize/angular-sanitize.min.js",
 			"public/system/lib/angular-bootstrap/ui-bootstrap.js",
 			"public/system/lib/angular-bootstrap/ui-bootstrap-tpls.js",			
-			"public/system/lib/angular-charts/ng-google-chart.js",
+			"public/system/lib/angular-google-chart/ng-google-chart.js",
 			"public/system/lib/jquery/dist/jquery.min.js",
 			"public/system/lib/ng-slider/dist/ng-slider.min.js",		
 			"public/init.js",
