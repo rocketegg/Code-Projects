@@ -139,7 +139,8 @@ exports.start = function(req, res) {
       //Runs every 5 seconds
       onTick: function() {
         for (var i = 0; i < iterations; i++) {
-                _encoder.encodeRandomPacket('./', function (err, data) {
+            _encoder.encodeRandomPacket('./packets/', function (err, data) {
+                if (err) throw err;
                 console.log('Streaming @ [%s]', new Date().getTime());
                 console.log(data);
                 client.send(data, 0, data.length, port, ip, function(err, bytes) {

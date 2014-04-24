@@ -20,8 +20,7 @@ function encodeRandomPacket(directory, cb) {
         });
         var randFile = getRandomFile(rtcpFiles);
         console.log('\nReading file: ' + randFile);
-        console.log('---------------------------------------------------');
-        fs.readFile(randFile, function (err, data) {
+        fs.readFile(directory + randFile, function (err, data) {
             cb(err, data);
         });
     });

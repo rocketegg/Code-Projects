@@ -30,7 +30,7 @@ function decode (msg, rinfo) {
     function writeToFile(msg) {
         var filename = 'rtcp_packets_' + makeid();
         console.log('---Writing byte stream to' + filename);
-        var wstream = fs.createWriteStream(filename);
+        var wstream = fs.createWriteStream('./packets/' + filename);
         wstream.write(msg);
         wstream.end();
         console.log('---Done.');
@@ -46,6 +46,9 @@ function decode (msg, rinfo) {
     // console.log('First Byte: ' + msg.readUInt32BE(0).toString(2));
     // packet.padding = msg[0] & 32;   //padding is 1 or 0 00100000
     packet.type = msg.readUInt8(1);
+
+    //UNCOMMENT THIS TO WRITE SOME PACKETS TO THE packets dir
+    //writeToFile(msg);
 
     // if (decoders[packet.type]) {
     //     packet.data = decoders[packet.type](msg);
