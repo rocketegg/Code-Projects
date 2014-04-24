@@ -71,7 +71,8 @@ angular.module('myApp.controllers', []).
 	    	$scope.result10.splice(0,1);
 	    }
 	    $scope.chartObject.data.rows.push({
-	    	c: [{v: numreceived},
+	    	c: [
+	    		{v: numreceived},
 	    		{v: timePerCall}]
 	    });
 	    if ($scope.chartObject.data.rows.length >= $scope.range) {
