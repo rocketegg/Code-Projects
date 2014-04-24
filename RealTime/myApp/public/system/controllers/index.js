@@ -91,9 +91,6 @@ angular.module('mean.system').controller('IndexController',
   	}
 
     $scope.poll = function() {
-		console.log('starting polling');
-		
-
 		//check status of cron job
     	$http({
     		method: 'GET',

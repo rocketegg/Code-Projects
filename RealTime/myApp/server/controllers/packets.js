@@ -131,29 +131,29 @@ exports.start = function(req, res) {
     var iterations = req.body.iterations;
     var port = req.body.port;
 
-    if (!rtcpjob) {
-        rtcpjob = new CronJob({
-          cronTime: '*/' + interval + ' * * * * *',
-          //Runs every 5 seconds
-          onTick: function() {
-            _encoder.encodeRandomPacket('./', function (err, data) {
+    if (rtcpjob) {
+        rtcpjob.stop();
+    }
+    rtcpjob = new CronJob({
+      cronTime: '*/' + interval + ' * * * * *',
+      //Runs every 5 seconds
+      onTick: function() {
+        for (var i = 0; i < iterations; i++) {
+                _encoder.encodeRandomPacket('./', function (err, data) {
                 console.log('Streaming @ [%s]', new Date().getTime());
                 console.log(data);
                 client.send(data, 0, data.length, port, ip, function(err, bytes) {
 
                 });
             });
-          },
-          start: false,
-          timeZone: "America/Los_Angeles"
-        });
+        }
+      },
+      start: false,
+      timeZone: "America/Los_Angeles"
+    });
 
-        console.log('Starting up cron job to stream random packets');
-        rtcpjob.start();
-    } else if (!rtcpjob.running) {
-        rtcpjob.start();
-    }
-    console.log(rtcpjob);
+    console.log('Starting up cron job to stream random packets');
+    rtcpjob.start();
     res.jsonp(util.inspect(rtcpjob));
 
 };
@@ -174,8 +174,8 @@ exports.checkjobstatus = function(req, res) {
 };
 
 exports.slice = function(req, res) {
-    console.log('Express - getting RTCP packet slice');
-    console.log(req.query);
+    // console.log('Express - getting RTCP packet slice');
+    // console.log(req.query);
 
     var startTime = req.query.startTime;
     var endTime = req.query.endTime;
