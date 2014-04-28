@@ -48,9 +48,8 @@ server.on('error', function (err) {
 });
 
 server.on('message', function (msg, rinfo) {
-  console.log('\nServer got: a message from ' +
-    rinfo.address + ':' + rinfo.port);
-  console.log('===================================================');
+  //console.log('[LISTENER] Server got: a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s]', new Date());
+  //console.log('===================================================');
   _decoder.decode(msg, rinfo);
 });
 

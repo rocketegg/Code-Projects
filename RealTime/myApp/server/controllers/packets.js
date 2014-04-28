@@ -9,6 +9,8 @@ var mongoose = require('mongoose'),
     dgram = require('dgram'),
     encoder = require('./encoder.js'),
     CronJob = require('cron').CronJob,
+    Cache = require('./util/Cache.js'),
+    fs = require('fs'),
     util = require('util');
 
 
@@ -116,20 +118,35 @@ exports.all = function(req, res) {
 };
 
 var rtcpjob;
+var packetCache = new Cache();
+var client = dgram.createSocket('udp4');
 
 exports.start = function(req, res) {
-    console.log('Express - starting up sending RTCP packets');
-    console.log(req.body);
-
-    //Wrapper class to send some bytes via random rtcp packets written to a file
-
-    var _encoder = new encoder();
-    var client = dgram.createSocket('udp4');
+    console.log('[PACKET] starting up sending RTCP packets');
 
     var interval = req.body.interval;
     var ip = req.body.ip;
     var iterations = req.body.iterations;
     var port = req.body.port;
+
+    //Init packet cache
+    if (packetCache.getSize().size < 1) {
+        console.log('[CACHE]: Initializing packet cache.');
+        var directory = './packets/';
+        fs.readdir(directory, function(err, files) { 
+            if (err) throw err;
+            files.forEach(function(file) {
+                if (file.indexOf('rtcp_packets_') > -1) {
+                    console.log('\tReading file: ' + file);
+                    fs.readFile(directory + file, function (err, data) {
+                        if (err) throw err;
+                        packetCache.setItem(file, data);
+                    });
+                }
+            });
+        });
+        console.log('\tDone.');
+    }
 
     if (rtcpjob) {
         rtcpjob.stop();
@@ -138,14 +155,15 @@ exports.start = function(req, res) {
       cronTime: '*/' + interval + ' * * * * *',
       //Runs every 5 seconds
       onTick: function() {
+        console.log('[PACKET]: Sending burst of [%d] packets @ [%s]', iterations, new Date());
         for (var i = 0; i < iterations; i++) {
-            _encoder.encodeRandomPacket('./packets/', function (err, data) {
-                if (err) throw err;
-                console.log('Streaming @ [%s]', new Date().getTime());
-                console.log(data);
-                client.send(data, 0, data.length, port, ip, function(err, bytes) {
+            //Uncomment to send random data:
+            //var data = packetCache.getRandomVal();
 
-                });
+            //Uncomment to send fixed data:
+            var data = packetCache.getItem('rtcp_packets_1Kcuz');
+            client.send(data, 0, data.length, port, ip, function(err, bytes) {
+                if (err) throw err;
             });
         }
       },
