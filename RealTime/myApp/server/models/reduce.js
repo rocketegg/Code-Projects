@@ -25,14 +25,16 @@ var ReduceSchema = new Schema({
         unique_ips: [String],
 
         //For each unique packet received, increment
-        packet_distribution: [{
+        packet_distribution: [new Schema({
             type: {
                 type: Number
             },
             count: {
                 type: Number
             }
-        }]
+        }, {
+            _id: false
+        })]
     }
 });
 

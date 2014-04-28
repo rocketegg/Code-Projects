@@ -6,16 +6,12 @@ var util = require('util'),
     mongoose = require('mongoose');
 
 var secret = 'radius_secret';
-//RTCP_PT_SR = 200      - SENDER REPORT
-//RTCP_PT_RR = 201      - RECEIVER REPORT
-//RTCP_PT_SDES = 202    - SOURCE DESCRIPTION
-//RTCP_PT_BYE = 203
-//RTCP_PT_APP = 204
 var decoders = {
-    '200': decode_200,
-    '202': decode_202,
-    '203': decode_203,
-    '204': decode_204
+    '200': decode_200,  //SENDER REPORT
+    '201': decode_201,  //RECEIVER REPORT
+    '202': decode_202,  //SOURCE DESCRIPTION
+    '203': decode_203,  //GOODBYE
+    '204': decode_204   //APPLICATION-DEFINED
 };
 
 function makeid() {
@@ -70,9 +66,9 @@ function decode_packets(msg, rinfo, offset) {
             mongoPacket.device.IP_ADDRESS = packet.IP;
             mongoPacket.metadata.TYPE = packet.type;
             mongoPacket.metadata.LENGTH = packet.packet_length;
-            // mongoPacket.save(function(err, packet) {
-            //     //console.log("\tDone inserting " + packet._id + " into mongodb.");
-            // });
+            mongoPacket.save(function(err, packet) {
+                console.log("\tDone inserting " + packet._id + " into mongodb.");
+            });
 
             console.log(JSON.stringify(packet, undefined, 2));
         } else {
@@ -87,6 +83,19 @@ function decode_packets(msg, rinfo, offset) {
 
 //Decode SR type packet
 function decode_200(msg, offset) {
+    //Reads a report block, pass in an offset in bytes
+    function decode_report_block(msg, offset) {
+        var report_block = {};
+        report_block.ssrc = msg.readUInt32BE(offset);
+        report_block.fraction_lost = msg.readUInt8(offset+4);
+        report_block.cumulative_lost = msg.readUInt32BE(offset+4) & 0x00FFFFFF;
+        report_block.highest_sequence_received = msg.readUInt32BE(offset + 8);
+        report_block.interarrival_jitter = msg.readUInt32BE(offset + 12);
+        report_block.last_sr = msg.readUInt32BE(offset + 16);
+        report_block.delay_since_last_sr = msg.readUInt32BE(offset + 20);
+        return report_block;
+    }
+
     console.log('[DECODER] - Found 200 - Sender Report');
     var data = {};
     data.length = msg.readUInt16BE(offset + 2);
@@ -104,34 +113,82 @@ function decode_200(msg, offset) {
         data.report_blocks.push(decode_report_block(msg, offset + 28 + (i * 24)));
     }
     return data;
+}
 
-    //Reads a report block, pass in an offset in bytes
-    function decode_report_block(msg, offset) {
-        var report_block = {};
-        report_block.ssrc = msg.readUInt32BE(offset);
-        report_block.fraction_lost = msg.readUInt8(offset+4);
-        report_block.cumulative_lost = msg.readUInt32BE(offset+4) & 0x00FFFFFF;
-        report_block.highest_sequence_received = msg.readUInt32BE(offset + 8);
-        report_block.interarrival_jitter = msg.readUInt32BE(offset + 12);
-        report_block.last_sr = msg.readUInt32BE(offset + 16);
-        report_block.delay_since_last_sr = msg.readUInt32BE(offset + 20);
-        return report_block;
-    }
+//Decode Receiver Report type packet
+function decode_201(msg, offset) {
+    console.log('[DECODER] - Found 201 - Receiver Report');
 }
 
 //Decode Source Description type packet
-function decode_202(msg) {
+// END      end of SDES list                    0
+// CNAME    canonical name                      1
+// NAME     user name                           2
+// EMAIL    user's electronic mail address      3
+// PHONE    user's phone number                 4
+// LOC      geographic user location            5
+// TOOL     name of application or tool         6
+// NOTE     notice about the source             7
+// PRIV     private extensions                  8
+function decode_202(msg, offset) {
+    function decode_sdes_item(msg, offset, type, length) {
+        var sdes_item = {};
+        sdes_item.type = type;
+        sdes_item.length = length;
+        sdes_item.value = msg.toString('utf8', offset, offset + length);
+        return sdes_item;
+    }
+
     console.log('[DECODER] - Found 202 - Source Description');
+    var data = {
+        length: msg.readUInt16BE(offset + 2)
+    };
+    var source_count = msg.readUInt8(offset) & 31;  //Number of chunks
+    var chunks = [];
+    var sdes_item_offset = offset + 8;
+
+    //Read through SDES Items, which are variable in length
+    for (var i = 0; i < source_count; i++) {
+        var chunk = {
+            ssrc: msg.readUInt32BE(offset + 4),
+            sdes_items: []
+        };
+
+        while (sdes_item_offset < offset + (4 + data.length * 4)) {
+            var sdes_item_type = msg.readUInt8(sdes_item_offset);
+            if (sdes_item_type === 0) { //terminal sdes_item_type
+                offset = findNextWord(sdes_item_offset);
+                break;
+            } else {
+                var sdes_item_length = msg.readUInt8(sdes_item_offset + 1);
+                chunk.sdes_items.push(decode_sdes_item(msg, sdes_item_offset + 2, sdes_item_type, sdes_item_length));
+                sdes_item_offset += sdes_item_length + 2;   //the length field doesn't include the 2 byte header
+            }
+        }
+
+        chunks.push(chunk);
+    }
+
+    data.chunks = chunks;
+    return data;
 }
 
 //Decode Bye Description type packet
-function decode_203(msg) {
-    console.log('[DECODER] - Found 203 - Bye Description');
+function decode_203(msg, offset) {
+    console.log('[DECODER] - Found 203 - Goodbye');
 }
 
-//Decode App type packet
-function decode_204(msg) {
-    console.log('[DECODER] Found 204 - App type packet');
+//Decode App type packet - This is Avaya Specific
+function decode_204(msg, offset) {
+    console.log('[DECODER] Found 204 - Application-Defined');
+}
+
+function findNextWord(octet) {
+    if (octet % 4 == 0) {
+        return octet;
+    } else {
+        return Math.floor(octet / 4) * 4 + 4;
+    }
 }
 
 var DecoderUtil = function () {

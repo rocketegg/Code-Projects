@@ -58,3 +58,11 @@ footer p {
 .normal {
   font-size: 11px;
 }
+
+.right {
+  float:right;
+}
+
+.charts-tooltip {
+  z-index: 1000;
+}

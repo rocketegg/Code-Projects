@@ -69,7 +69,7 @@ angular.module('mean.system').controller('IndexController',
     	density: 1
     };
 
-  $scope.slidervalue = '0;15';
+  $scope.slidervalue = '0;5';
   $scope.slideroptions = {       
     from: 0,
     to: 60,
@@ -124,14 +124,20 @@ angular.module('mean.system').controller('IndexController',
 	      "type": "ComboChart",
 	      "displayed": true,
 	      "options": {
-	          "title":"Basic Chart",
+	          "title":"RTCP Overview",
 	          //"fill": 20,
 	          "displayExactValues": true,
 	          "seriesType": "bars",
 	          "series": {
 	            0: {type: "line"},
-	            1: {type: "line"}
+	            1: {type: "line"},
+                2: {type: "bar"},
+                3: {type: "bar"},
+                4: {type: "bar"},
+                5: {type: "bar"},
+                6: {type: "bar"}
 	          },
+              "isStacked": true,
 	          "vAxes": [
 	              { "title": "Packet Flow",
 	                "gridlines": {
@@ -152,7 +158,12 @@ angular.module('mean.system').controller('IndexController',
 	        "cols": [
 	          {id: "t", label: "Timestamp", type: "string"},
 	          {id: "s", label: "Total Packets", type: "number"},
-	          {id: "u", label: "Unique IPs", type: "number"}
+	          {id: "u", label: "Unique IPs", type: "number"},
+              {id: "200", label: "200 (Sender Reports)", type: "number"},
+              {id: "201", label: "201 (Receiver Reports)", type: "number"},
+              {id: "202", label: "202 (Sender Description)", type: "number"},
+              {id: "203", label: "203 (Goodbye)", type: "number"},
+              {id: "204", label: "204 (App-Defined)", type: "number"}
 	          ],
 	        "rows":[
 	        ]
@@ -162,10 +173,27 @@ angular.module('mean.system').controller('IndexController',
 	function createChartObjects(data) {
 
         function createChartRow(datapoint) {
+            var typeMap = {
+                200: 0,
+                201: 0,
+                202: 0,
+                203: 0,
+                204: 0
+            }
+            datapoint.stats.packet_distribution.forEach(function(packet) {
+                typeMap[packet.type] = packet.count;
+            });
+
         	return {
 	            c: [{v: new Date(datapoint.timestamp)},
 	                {v: datapoint.stats.total_packets},
-	                {v: datapoint.stats.unique_ips.length}]
+	                {v: datapoint.stats.unique_ips.length},
+                    {v: typeMap[200]},
+                    {v: typeMap[201]},
+                    {v: typeMap[202]},
+                    {v: typeMap[203]},
+                    {v: typeMap[204]}
+                    ]
             };
         }
 

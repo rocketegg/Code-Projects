@@ -1,30 +1,30 @@
 <section data-ng-controller="IndexController">
   <div class="row">
-    <div class="col-sm-6">
+    <div class="col-sm-3">
       <form class="form-horizontal">
         <fieldset>
           <legend>RTCP Packet Simulator</legend>
           <div class="form-group">
-            <label for="ip" class="col-lg-2 control-label">IP</label>
-            <div class="col-lg-10">
+            <label for="ip" class="col-lg-4 control-label">IP</label>
+            <div class="col-lg-8">
               <input type="text" class="form-control" ng-model="options.ip" placeholder="e.g. 127.0.0.1">
             </div>
           </div>
           <div class="form-group">
-            <label for="port" class="col-lg-2 control-label">Port</label>
-            <div class="col-lg-10">
+            <label for="port" class="col-lg-4 control-label">Port</label>
+            <div class="col-lg-8">
               <input type="number" class="form-control" ng-model="options.port" placeholder="(local server listens by default on: 5006)">
             </div>
           </div>
           <div class="form-group">
-            <label for="iterations" class="col-lg-2 control-label">Iterations (per interval)</label>
-            <div class="col-lg-10">
+            <label for="iterations" class="col-lg-4 control-label">Iterations (per interval)</label>
+            <div class="col-lg-8">
               <input type="number" class="form-control" ng-model="options.iterations" placeholder="e.g. 10">
             </div>
           </div>
           <div class="form-group">
-            <label for="select" class="col-lg-2 control-label">Interval (s)</label>
-            <div class="col-lg-10">
+            <label for="select" class="col-lg-4 control-label">Interval (s)</label>
+            <div class="col-lg-8">
               <select class="form-control" ng-model="options.interval">
                 <option>2</option>
                 <option>5</option>
@@ -36,17 +36,17 @@
             </div>
           </div>
           <div class="form-group">
-            <div class="col-lg-10 col-lg-offset-2">
-              <button class="btn btn-danger" ng-click="stop(options)" ng-class="{'disabled': !jobstatus || !(jobstatus.running == true)}">Stop</button>
-              <button type="submit" ng-click="start(options)" class="btn btn-primary" ng-class="{'disabled': jobstatus && jobstatus.running == true}">Submit</button>
-              <button ng-click="togglePolling()" class="btn btn-success"><span ng-show="isPolling">Pause </span><span ng-show="!isPolling">Start </span>Polling</button>
+            <div class="col-lg-8 col-lg-offset-4">
+              <button class="btn btn-danger btn-sm" ng-click="stop(options)" ng-class="{'disabled': !jobstatus || !(jobstatus.running == true)}">Stop</button>
+              <button type="submit" ng-click="start(options)" class="btn btn-primary btn-sm" ng-class="{'disabled': jobstatus && jobstatus.running == true}">Submit</button>
             </div>
           </div>
         </fieldset>
       </form>
     </div>
-    <div class="col-sm-6">
+    <div class="col-sm-9">
       Sending Packets: <span class="label" ng-class="{'label-success': jobstatus.running, 'label-danger':!jobstatus.running}">{{jobstatus.running}}</span>
+      <button ng-click="togglePolling()" class="btn btn-success btn-sm right"><span ng-show="isPolling">Pause </span><span ng-show="!isPolling">Start </span>Polling</button>
       <div class="row">
         <div class="col-sm-12" style="padding-top:20px; padding-bottom:20px">
           <input ng-model="slidervalue" type="text" id="mySlider1" slider options="slideroptions" />
@@ -93,7 +93,7 @@
                 <td><a href="" ng-click="showCO = !showCO">More</a>
                 </td>
                 <td>{{lastChartObjectRow.c[0].v | date:'medium'}}</td>
-                <td>{{lastChartObjectRow.c[1].v}}</td>
+                <td>{{lastChartObjectRow.c[1].v}} (200: {{row.c[3].v}}, 201: {{row.c[4].v}}, 202: {{row.c[5].v}}, 203: {{row.c[6].v}}, 204: {{row.c[7].v}})</td>
                 <td>{{lastChartObjectRow.c[2].v}}
                   <div class="padded" ng-repeat="ip in chartData[chartData.length-1].stats.unique_ips">
                     <div class="label label-default normal">{{ip}}</div>
@@ -104,7 +104,7 @@
                 <td>{{$index + 1}}</td>
                 <td>{{row.c[0].v | date:'medium'}}
                 </td>
-                <td>{{row.c[1].v}}</td>
+                <td>{{row.c[1].v}} (200: {{row.c[3].v}}, 201: {{row.c[4].v}}, 202: {{row.c[5].v}}, 203: {{row.c[6].v}}, 204: {{row.c[7].v}})</td>
                 <td>{{row.c[2].v}}</td>
               </tr>
 

@@ -1,6 +1,7 @@
 /*global emit */
 var util = require('util'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    Schema = mongoose.Schema;
 
 
 var Filterer = function() {};
@@ -27,7 +28,7 @@ Filterer.prototype.query = function(lastRun, cb) {
 
       packets.forEach(function(packet) {
         //Add IP to the set
-        _reduce.stats.unique_ips.addToSet(packet.device.IP_ADDRESS)
+        _reduce.stats.unique_ips.addToSet(packet.device.IP_ADDRESS);
 
         //add to packet_distribution
         var packet_type_exists = false;
