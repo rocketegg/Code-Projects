@@ -71,7 +71,8 @@ function decode_packets(msg, rinfo, offset) {
                 console.log("\tDone inserting " + packet._id + " into mongodb.");
             });
 
-            console.log(JSON.stringify(packet, undefined, 2));
+            if (packet.type === 200)
+                console.log(JSON.stringify(packet, undefined, 2));
         } else {
             console.log('\tError: Unknown packet type: ' + packet.type);
         }
