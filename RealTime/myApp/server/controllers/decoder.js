@@ -66,6 +66,7 @@ function decode_packets(msg, rinfo, offset) {
             mongoPacket.device.IP_ADDRESS = packet.IP;
             mongoPacket.metadata.TYPE = packet.type;
             mongoPacket.metadata.LENGTH = packet.packet_length;
+            mongoPacket.data = packet.data;
             mongoPacket.save(function(err, packet) {
                 console.log("\tDone inserting " + packet._id + " into mongodb.");
             });

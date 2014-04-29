@@ -112,6 +112,7 @@ angular.module('mean.system').controller('IndexController',
     	}).success(function(data, status, headers, config) {
     		var responseTime = new Date().getTime() - currentTime;
     		createChartObjects(data);
+            createChartQOSObjects(data);
     		createChartStatObjects(data, responseTime);
     	}).error(function(data, status, headers, config) {
     		console.log('error');
@@ -181,7 +182,7 @@ angular.module('mean.system').controller('IndexController',
                 204: 0
             }
             datapoint.stats.packet_distribution.forEach(function(packet) {
-                typeMap[packet.type] = packet.count;
+                typeMap[packet.type] = packet.count ? packet.count : 0;
             });
 
         	return {
@@ -262,6 +263,91 @@ angular.module('mean.system').controller('IndexController',
         	$scope.chartObjectStats.data.rows.splice(0,1);
         }
         $scope.lastChartObjectStatsRow = $scope.chartObjectStats.data.rows[$scope.chartObjectStats.data.rows.length - 1];
+    }
+
+    /*
+     * Quality of Service
+     */
+
+    $scope.chartObjectQOS = {
+          "type": "ComboChart",
+          "displayed": true,
+          "options": {
+              "title":"Quality of Service (QoS)",
+              //"fill": 20,
+              "displayExactValues": true,
+              "seriesType": "line",
+              "series": {
+                0: {type: "line"},
+                1: {type: "line"}
+              },
+              "vAxes": [
+                  { "title": "Interarrival Jitter",
+                    "gridlines": {
+                      "count": 10
+                    }
+                  }
+              ],
+              "hAxis": {
+                "title": "Timestamp"
+              }
+          },
+          "data": {
+            "cols": [
+                {id: "asdf", label: "Timestamp", type: "string"}
+              ],
+            "rows":[
+            ]
+          }
+        };
+
+    function createChartQOSObjects(data) {
+
+        $scope.chartObjectQOS.data.rows = [];
+        var unique_devices = [];
+        data.forEach(function(datapoint) { 
+            //1 -find all devices
+            datapoint.stats.qos.forEach(function(device) {
+                if (unique_devices.indexOf(device.device) < 0) {
+                    unique_devices.push(device.device);
+                }
+            });
+        });
+
+        //2 - create a series for each device
+        $scope.chartObjectQOS.data.cols = [{id: "asdf", label: "Timestamp", type: "string"}];
+        unique_devices.forEach(function(device) {
+            $scope.chartObjectQOS.data.cols.push({
+                id: device, label: device, type: "number"
+            });
+        });
+
+        //3 - plot all data points
+        data.forEach(function(datapoint) {
+            var row = [];
+            row.push({v: new Date(datapoint.timestamp).toTimeString()});
+
+            unique_devices.forEach(function(device) {
+                var pushed = false;
+                for (var i = 0; i < datapoint.stats.qos.length; i++) {
+                    if (datapoint.stats.qos[i].device == device) {
+                        row.push({v:datapoint.stats.qos[i].interarrival_jitter ? datapoint.stats.qos[i].interarrival_jitter : 0});
+                        pushed = true;
+                        break;
+                    }
+                }
+                if (!pushed) {
+                    row.push({v:0});
+                }
+                
+            });
+
+            $scope.chartObjectQOS.data.rows.push({
+                c: row
+            });
+        });
+
+        $scope.lastChartObjectQOSRow = data[data.length - 1];
     }
 
 

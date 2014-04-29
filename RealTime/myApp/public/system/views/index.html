@@ -93,7 +93,7 @@
                 <td><a href="" ng-click="showCO = !showCO">More</a>
                 </td>
                 <td>{{lastChartObjectRow.c[0].v | date:'medium'}}</td>
-                <td>{{lastChartObjectRow.c[1].v}} (200: {{row.c[3].v}}, 201: {{row.c[4].v}}, 202: {{row.c[5].v}}, 203: {{row.c[6].v}}, 204: {{row.c[7].v}})</td>
+                <td>{{lastChartObjectRow.c[1].v}} (200: {{lastChartObjectRow.c[3].v}}, 201: {{lastChartObjectRow.c[4].v}}, 202: {{lastChartObjectRow.c[5].v}}, 203: {{lastChartObjectRow.c[6].v}}, 204: {{lastChartObjectRow.c[7].v}})</td>
                 <td>{{lastChartObjectRow.c[2].v}}
                   <div class="padded" ng-repeat="ip in chartData[chartData.length-1].stats.unique_ips">
                     <div class="label label-default normal">{{ip}}</div>
@@ -107,9 +107,37 @@
                 <td>{{row.c[1].v}} (200: {{row.c[3].v}}, 201: {{row.c[4].v}}, 202: {{row.c[5].v}}, 203: {{row.c[6].v}}, 204: {{row.c[7].v}})</td>
                 <td>{{row.c[2].v}}</td>
               </tr>
-
+              </table>
           </div>
         </div>
+
+        <!-- QOS -->
+        <div class="row">
+          <div class="col-sm-12">
+
+            <div google-chart chart="chartObjectQOS"></div>
+            <div>
+            <!-- {{chartObjectQOS.data.rows}} -->
+            <table class="table table-condensed table-bordered small">
+            <tr>
+                <th>#</th>
+                <th>Timestamp</th>
+                <th>Device IP</th>
+                <th>Avg Jitter (Current) </th>
+                <th>Packets Lost</th>
+              </tr>
+              <tr ng-repeat="device in lastChartObjectQOSRow.stats.qos">
+              <td>{{$index}}</td>
+              <td>{{lastChartObjectQOSRow.timestamp | date:'medium'}}</td>
+              <td>{{device.device}}</td>
+              <td>{{device.interarrival_jitter}}</td>
+              <td>{{device.cumulative_lost_packets}}</td>
+              </tr>
+            </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

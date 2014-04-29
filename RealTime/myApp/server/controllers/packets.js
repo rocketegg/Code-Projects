@@ -158,10 +158,10 @@ exports.start = function(req, res) {
         console.log('[PACKET]: Sending burst of [%d] packets @ [%s]', iterations, new Date());
         for (var i = 0; i < iterations; i++) {
             //Uncomment to send random data:
-            //var data = packetCache.getRandomVal();
+            var data = packetCache.getRandomVal();
 
             //Uncomment to send fixed data:
-            var data = packetCache.getItem('rtcp_packets_1Kcuz');
+            //var data = packetCache.getItem('rtcp_packets_I8n34');
             client.send(data, 0, data.length, port, ip, function(err, bytes) {
                 if (err) throw err;
             });

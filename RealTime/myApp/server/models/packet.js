@@ -60,6 +60,11 @@ var PacketSchema = new Schema({
     }
   },
 
+  //placeholder for now
+  data: {
+
+  },
+
   //These are quality of service metrics that are specific to each vendor
   qos: {
 

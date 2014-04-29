@@ -34,6 +34,14 @@ var ReduceSchema = new Schema({
             }
         }, {
             _id: false
+        })],
+
+        qos: [new Schema({
+            device: String,
+            interarrival_jitter: Number,
+            cumulative_lost_packets: Number
+        }, {
+            _id: false
         })]
     }
 });
