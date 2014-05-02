@@ -11,7 +11,7 @@ var Aggregator = function () {
             var _reducer = new Reducer();
             var _filterer = new Filterer();
             var lastRun = new Date().getTime() - 5000;
-            console.log('[Aggregator] Aggregating results @ [%s]', new Date());
+            console.log('[AGGREGATOR] Aggregating results @ [%s]', new Date());
             _filterer.query(lastRun);
             //_reducer.query(lastRun);
         }

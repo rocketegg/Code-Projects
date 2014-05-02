@@ -3,6 +3,7 @@
 		"public/build/css/dist.min.css": [
 			"public/system/lib/bootstrap/dist/css/bootstrap.css",
 			"public/system/lib/ng-slider/dist/css/ng-slider.min.css",
+			"public/system/lib/angular-multiselect/multiselect.css",
 			"public/**/assets/css/*.css"
 		]
 	},
@@ -17,7 +18,8 @@
 			"public/system/lib/angular-bootstrap/ui-bootstrap-tpls.js",			
 			"public/system/lib/angular-google-chart/ng-google-chart.js",
 			"public/system/lib/jquery/dist/jquery.min.js",
-			"public/system/lib/ng-slider/dist/ng-slider.min.js",		
+			"public/system/lib/ng-slider/dist/ng-slider.min.js",
+			"public/system/lib/angular-multiselect/multiselect-tpls.js",
 			"public/init.js",
 			"public/*/*.js",			
 			"public/*/*/*.js"			

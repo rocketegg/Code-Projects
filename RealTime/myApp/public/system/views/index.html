@@ -42,8 +42,48 @@
             </div>
           </div>
         </fieldset>
+        <fieldset>
+         <legend>Device Statistics</legend>
+            <div class="form-group">
+              <label class="col-lg-4 control-label">IP</label>
+              <div class="col-lg-8">
+                <input ng-model="mapreduce.device.IP_ADDRESS"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-lg-4 control-label">Metrics</label>
+              <div class="col-lg-8">
+              <multiselect class="input-xlarge"
+                ng-model="mapreduce.metricKeys"
+                options="key for key in metricKeys"
+                change="selected()" multiple="true"></multiselect>
+                <!-- <select class="form-control" data-ng-options="key in metricKeys" data-ng-model="mapreduce.metricKeys"></select> -->
+              </div>
+              
+            </div>
+            <div class="form-group">
+              <div class="col-lg-8 col-lg-offset-4">
+                <button type="submit" ng-click="reduce(mapreduce)" class="btn btn-success btn-sm">Reduce</button>
+              </div>
+
+            </div>
+            <div class="form-group">
+              <div class="col-lg-10">
+                <table class="table table-condensed table-bordered">
+                <tr><th>Selected Metrics</th></tr>
+                  <tr ng-repeat="key in mapreduce.metricKeys">
+                  <td>{{key}}</td>
+                  </tr>
+                </table>
+              </div>
+
+            </div>
+        </fieldset>
       </form>
     </div>
+
+
+    <!-- CHARTS -->
     <div class="col-sm-9">
       Sending Packets: <span class="label" ng-class="{'label-success': jobstatus.running, 'label-danger':!jobstatus.running}">{{jobstatus.running}}</span>
       <button ng-click="togglePolling()" class="btn btn-success btn-sm right"><span ng-show="isPolling">Pause </span><span ng-show="!isPolling">Start </span>Polling</button>
@@ -136,6 +176,18 @@
             </table>
             </div>
           </div>
+        </div>
+
+        <div class="row">
+          <table class="table table-condensed table-bordered table-hover white">
+            <tr><th>Metric</th><th>High</th><th>Low</th><th>Average</th></tr>
+            <tr ng-repeat="(key, value) in mapreducedata.value">
+              <td>{{key}}</td>
+              <td>{{value.high}}</td>
+              <td>{{value.low}}</td>
+              <td>{{value.total / value.count}}</td>
+            </tr>
+          </table>
         </div>
 
       </div>

@@ -5,7 +5,6 @@
 var mean = require('meanio'),
 	dgram = require('dgram'),
 	decoder = require('./server/controllers/decoder.js'),
-	encoder = require('./server/controllers/encoder.js'),
 	Aggregator = require ('./server/controllers/util/Aggregator.js'),
 	Purger = require ('./server/controllers/util/Purger.js'),
 	CronJob = require('cron').CronJob;
@@ -48,8 +47,7 @@ server.on('error', function (err) {
 });
 
 server.on('message', function (msg, rinfo) {
-  console.log('[LISTENER] Server got: a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s]', new Date());
-  //console.log('===================================================');
+  console.log('[LISTENER] Received a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s] of size [%d] bytes.', new Date(), msg.length);
   _decoder.decode(msg, rinfo);
 });
 
@@ -73,7 +71,7 @@ var aggregator = new CronJob({
   	_aggregator.aggregateAll();
   },
   start: false,
-  timeZone: "America/Los_Angeles"
+  timeZone: 'America/Los_Angeles'
 });
 
 console.log('Starting up cron job to aggregate packets packets');
@@ -89,7 +87,7 @@ var purger = new CronJob({
   	_purger.purge();
   },
   start: false,
-  timeZone: "America/Los_Angeles"
+  timeZone: 'America/Los_Angeles'
 });
 
 console.log('Starting up cron job to purge dead packets');

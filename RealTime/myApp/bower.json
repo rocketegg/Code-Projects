@@ -13,6 +13,7 @@
         "ng-slider": "latest",
         "angular-sanitize": "latest",
         "angular-google-chart": "latest",
+        "angular-multiselect":"latest",
         "jQuery": "latest"
     }
 }

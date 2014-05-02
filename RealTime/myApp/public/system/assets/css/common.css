@@ -66,3 +66,7 @@ footer p {
 .charts-tooltip {
   z-index: 1000;
 }
+
+.table.white {
+  background:white;
+}

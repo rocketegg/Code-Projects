@@ -17,7 +17,7 @@ for (var index in window.modules) {
 };
 
 // Default modules
-var modules = ['ngCookies', 'ngResource', 'ui.bootstrap', 'ui.router', 'mean.system', 'mean.articles', 'mean.auth', 'googlechart', 'ngSanitize', 'ngSlider'];
+var modules = ['ngCookies', 'ngResource', 'ui.bootstrap', 'ui.router', 'mean.system', 'mean.articles', 'mean.auth', 'googlechart', 'ngSanitize', 'ngSlider', 'ui.multiselect'];
 modules = modules.concat(packageModules);
 
 // Combined modules

@@ -10,7 +10,7 @@ Filterer.prototype.query = function(lastRun, cb) {
   'use strict';
   
   var timestamp = new Date().getTime();
-  console.log('[Filterer]: Filtering results for range: [%s] to [%s]', new Date(lastRun), new Date());
+  console.log('[FILTERER]: Filtering results for range: [%s] to [%s]', new Date(lastRun), new Date());
   try {
     var packets = mongoose.model('Packet');
     packets.find({

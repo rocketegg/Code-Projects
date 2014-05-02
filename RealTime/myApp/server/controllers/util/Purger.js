@@ -8,7 +8,7 @@ var Purger = function () {
         //Purge up to an hour ago
         purge: function(cb) {
             var removeDate = new Date().getTime() - (60 * 60 * 1000);
-            console.log('[Purger] Purging results @ [%s]', new Date());
+            console.log('[PURGER] Purging results @ [%s]', new Date());
             var Packet = mongoose.model('Packet');
 
             Packet.find({
@@ -18,7 +18,7 @@ var Purger = function () {
             }, function (err, packets) {
                 if (err) throw err;
                 
-                console.log('\t[Purger] Removing [%d] packets from Packets collection @ [%s]', packets.length, new Date(removeDate));
+                console.log('\t[PURGER] Removing [%d] packets from Packets collection @ [%s]', packets.length, new Date(removeDate));
                 packets.forEach(function(packet) {
                     packet.remove();
                 });
@@ -32,7 +32,7 @@ var Purger = function () {
             }, function (err, packets) {
                 if (err) throw err;
                 
-                console.log('\t[Purger] Removing [%d] packets from Reduce collection @ [%s]', packets.length, new Date(removeDate));
+                console.log('\t[PURGER] Removing [%d] packets from Reduce collection @ [%s]', packets.length, new Date(removeDate));
                 packets.forEach(function(packet) {
                     packet.remove();
                 });

@@ -125,7 +125,7 @@ angular.module('mean.system').controller('IndexController',
 	      "type": "ComboChart",
 	      "displayed": true,
 	      "options": {
-	          "title":"RTCP Overview",
+	          "title":"RTCP Inbound Packets",
 	          //"fill": 20,
 	          "displayExactValues": true,
 	          "seriesType": "bars",
@@ -349,6 +349,56 @@ angular.module('mean.system').controller('IndexController',
 
         $scope.lastChartObjectQOSRow = data[data.length - 1];
     }
+
+    //ANALYTICS
+    $scope.mapreduce = {
+        device: {
+            IP_ADDRESS: '10.30.12.20'
+        },
+    };
+
+    $scope.metricKeys = [
+        "MID_IN_RTP_DEST_PORT",
+        "MID_IN_RTP_SRC_PORT",
+        "MID_ECHO_CANCELLATION",
+        "MID_SILENCE_SUPPRESSION",
+        "MID_MEDIA_ENCYPTION",
+        "MID_RTP_8021D",
+        "MID_RTP_DSCP",
+        "MID_RTP_TTL",
+        "MID_FRAME_SIZE",
+        "MID_PAYLOAD_TYPE",
+        "MID_ADDR_PORT",
+        "MID_ECHO_TAIL_LENGTH",
+        "MID_SEQ_FALL_INSTANCES",
+        "MID_SEQ_JUMP_INSTANCES",
+        "MID_JITTER_BUFFER_OVERRUNS",
+        "MID_JITTER_BUFFER_UNDERRUNS",
+        "MID_MAX_JITTER",
+        "MID_RSVP_RECEIVER_STATUS",
+        "MID_LARGEST_SEQ_FALL",
+        "MID_LARGEST_SEQ_JUMP",
+        "MID_JITTER_BUFFER_DELAY",
+        "MID_RTCP_RTT"
+    ];
+
+    $scope.reduce = function() {
+        $scope.mapreduce.startTime = $scope.chartOptions.startTime;
+        $scope.mapreduce.endTime = $scope.chartOptions.endTime;
+
+        $http({
+            method: 'POST',
+            url: '/analytics/reduce',
+            data: $scope.mapreduce
+        }).success(function(data) {
+            console.log('Map reduce done.');
+            $scope.mapreducedata = data[0];
+        }).error(function(err) {
+
+        });
+    };
+
+
 
 
 
