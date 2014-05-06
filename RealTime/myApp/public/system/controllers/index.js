@@ -385,17 +385,20 @@ angular.module('mean.system').controller('IndexController',
     $scope.reduce = function() {
         $scope.mapreduce.startTime = $scope.chartOptions.startTime;
         $scope.mapreduce.endTime = $scope.chartOptions.endTime;
+        if (!$scope.mapreduce.metricKeys || $scope.mapreduce.metricKeys.length < 1) {
+            alert('Select at least one metric to continue');
+        } else {
+            $http({
+                method: 'POST',
+                url: '/analytics/reduce',
+                data: $scope.mapreduce
+            }).success(function(data) {
+                console.log('Map reduce done.');
+                $scope.mapreducedata = data[0];
+            }).error(function(err) {
 
-        $http({
-            method: 'POST',
-            url: '/analytics/reduce',
-            data: $scope.mapreduce
-        }).success(function(data) {
-            console.log('Map reduce done.');
-            $scope.mapreducedata = data[0];
-        }).error(function(err) {
-
-        });
+            });
+        }
     };
 
 

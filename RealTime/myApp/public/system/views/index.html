@@ -180,6 +180,7 @@
 
         <div class="row">
           <table class="table table-condensed table-bordered table-hover white">
+            <tr><th colspan=4>Showing results for: {{mapreducedata._id ? mapreducedata._id : 'N/A'}}</th></tr>
             <tr><th>Metric</th><th>High</th><th>Low</th><th>Average</th></tr>
             <tr ng-repeat="(key, value) in mapreducedata.value">
               <td>{{key}}</td>
