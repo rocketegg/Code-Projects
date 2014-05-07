@@ -385,8 +385,12 @@ angular.module('mean.system').controller('IndexController',
     $scope.reduce = function() {
         $scope.mapreduce.startTime = $scope.chartOptions.startTime;
         $scope.mapreduce.endTime = $scope.chartOptions.endTime;
+        var ips = $scope.mapreduce.device.IP_ADDRESS.split(',');
+
         if (!$scope.mapreduce.metricKeys || $scope.mapreduce.metricKeys.length < 1) {
             alert('Select at least one metric to continue');
+        } else if (ips.length < 1 && !$scope.mapreduce.device.extension) {
+            alert('Enter at least 1 IP address or extension');
         } else {
             $http({
                 method: 'POST',
@@ -397,7 +401,13 @@ angular.module('mean.system').controller('IndexController',
                 if (data.error) {
                     $scope.mapreduceerror = data.error;
                 } else {
-                    $scope.mapreducedata = data[0];
+                    $scope.mapreducedata = data;
+                    $scope.show = {};
+                    for (var i = 0; i < data.length; i++) {
+                        $scope.show[data[i]._id] = false;
+                    }
+                    $scope.aggregate = processStats(data);
+                    $scope.colormap = createColorMap(data);
                     $scope.mapreduceerror = '';
                 }
             }).error(function(err) {
@@ -406,7 +416,76 @@ angular.module('mean.system').controller('IndexController',
         }
     };
 
+    /*
+    * Computes average by number of devices
+    */
 
+    var colors = [
+        'Crimson', 'DarkGreen', 'MidnightBlue', 'DarkMagenta', 'DarkOrange', 'Gold', 'LightPink', 'Aqua',  'Olive', 'Plum', 'Red', 'SteelBlue', 'YellowGreen'
+    ];
+    function createColorMap(data) {
+        var colormap = {};
+        for (var i = 0; i < data.length; i++) {
+            var idx = i % colors.length;
+            colormap[data[i]._id] = colors[idx];
+        }
+        return colormap;
+    }
+
+    function processStats(data) {
+        var aggregate = {};
+        if (data[0]) {
+            aggregate.devices = data[0]._id;
+            for (var key in data[0].value) {
+                aggregate[key] = {
+                    high: { 
+                        value: data[0].value[key].high,
+                        device: data[0]._id
+                    },
+                    low: {
+                        value: data[0].value[key].low,
+                        device: data[0]._id
+                    },
+                    average: {
+                        value: data[0].value[key].total / data[0].value[key].count,
+                        device: data[0]._id
+                    }
+                } 
+            }
+            for (var i = 1; i < data.length; i++) {
+                aggregate.devices += ', ' + data[i]._id;
+                for (var key in data[i].value) {
+                    //compute high
+                    if (data[i].value[key].high > aggregate[key].high.value) {
+                        aggregate[key].high = {
+                            value: data[i].value[key].high,
+                            device: data[i]._id
+                        }
+                    }
+
+                    //compute low
+                    if (data[i].value[key].low < aggregate[key].low.value) {
+                        aggregate[key].low = {
+                            value: data[i].value[key].low,
+                            device: data[i]._id
+                        }
+                    }
+
+                    //compute (high) average
+                    var average = data[i].value[key].total / data[i].value[key].count;
+                    if (average > aggregate[key].average.value) {
+                        aggregate[key].average = {
+                            value: average,
+                            device: data[i]._id
+                        }
+                    }
+                }
+            }
+        }
+        return aggregate;
+
+
+    }
 
 
 

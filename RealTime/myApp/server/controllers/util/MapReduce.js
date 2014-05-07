@@ -10,6 +10,12 @@ MapReduceAggregator.prototype.name = 'MapReduceAggregator';
  * This function performs a custom map reduce based on the device signature (by IP address)
  * and will compute the high, low and average of the metricKey for a given time slice.
  * MetricKey is an array of metrics of a 204 packet type avaya subtype
+ *
+ * INPUT: device - an array of IP addresses (strings)
+ * metricKey - an array of strings corresponding to the avaya 204 packet keys
+ * startTime - a start time (unix time) in milliseconds
+ * endTime - an end time (unix time) in milliseconds
+ *
  */
 //Unfortunately the MR driver needs global variables to do this.
 var _device,
@@ -19,7 +25,7 @@ var _device,
 MapReduceAggregator.prototype.query = function(device, metricKey, startTime, endTime, cb) {
   'use strict';
   
-  console.log('[MapReduce]: Querying [%s] with metrics: [%s] for time slice [%s] to [%s]', device.IP_ADDRESS, metricKey, new Date(startTime), new Date(endTime));
+  console.log('[MapReduce]: Querying [%s] with metrics: [%s] for time slice [%s] to [%s]', device, metricKey, new Date(startTime), new Date(endTime));
   try {
     var packets = mongoose.model('Packet');
 
@@ -36,7 +42,9 @@ MapReduceAggregator.prototype.query = function(device, metricKey, startTime, end
 
       o.query = { 
         $and: [{ 
-          'device.IP_ADDRESS': device.IP_ADDRESS 
+          'device.IP_ADDRESS': {
+            $in: device
+          }
         }, {
           'metadata.TYPE': 204
         }]
@@ -145,6 +153,14 @@ function findIPByExtension(extension, startTime, endTime, cb) {
   });
 }
 
+function splitIPs(ip_string) {
+  var IPs = ip_string.split(',');
+  for (var i = 0; i < IPs.length; i++) {
+    IPs[i] = IPs[i].trim();
+  }
+  return IPs;
+}
+
 var MapReduce = function () {
     return {
         //For a particular device, compute the metric for a time period
@@ -154,14 +170,18 @@ var MapReduce = function () {
         //}
         reduce: function(device, metricKey, startTime, endTime, cb) {
           console.log('[MapReduce]: Running Map Reduce @ ' + new Date());
+          var IPs = splitIPs(device.IP_ADDRESS ? device.IP_ADDRESS : "");
+
           var reducer = new MapReduceAggregator();
 
-          if (device.IP_ADDRESS) {
-            reducer.query(device, metricKey, startTime, endTime, function(err, results) {
+          if (IPs.length > 0) {
+            reducer.query(IPs, metricKey, startTime, endTime, function(err, results) {
               if (err) throw err;
               cb(err, results);
             });
-          } else if (device.extension) {
+          } 
+          //by extension
+          else if (device.extension) {
             findIPByExtension(device.extension, startTime, endTime, function(err, IP_ADDRESS) {
               if (err) throw err;
 

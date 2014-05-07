@@ -45,7 +45,7 @@
         <fieldset>
          <legend>Device Statistics</legend>
             <div class="form-group">
-              <label class="col-lg-4 control-label">IP</label>
+              <label class="col-lg-4 control-label">IP (comma separated)</label>
               <div class="col-lg-8">
                 <input ng-model="mapreduce.device.IP_ADDRESS"/>
               </div>
@@ -184,15 +184,38 @@
           </div>
         </div>
 
+        <!-- Aggregate -->
         <div class="row">
           <table class="table table-condensed table-bordered table-hover white">
-            <tr><th colspan=4>Showing results for: {{mapreducedata._id ? mapreducedata._id : 'N/A'}} <span class="label label-danger">{{mapreduceerror}}</span></th></tr>
-            <tr><th>Metric</th><th>High</th><th>Low</th><th>Average</th></tr>
-            <tr ng-repeat="(key, value) in mapreducedata.value">
+            <tr><th colspan=4>Showing Aggregate Results for devices: {{aggregate.devices}} <span class="label label-danger">{{mapreduceerror}}</span></th></tr>
+            <tr>
+              <td colspan=4>
+                <span ng-repeat="device in mapreducedata" class="col-sm-3">
+                  <input type="checkbox" ng-model="show[device._id]"/><span class="spacer"></span><span style="color: {{colormap[device._id]}}">{{device._id}}</span>
+                </span>
+              </td>
+            </tr>
+            <tr><th>Metric</th><th>High</th><th>Low</th><th>Average (High)</th></tr>
+            <tr ng-repeat="(key, value) in aggregate">
               <td>{{key}}</td>
-              <td>{{value.high}}</td>
-              <td>{{value.low}}</td>
-              <td>{{value.total / value.count}}</td>
+              <td>{{value.high.value}} <span style="color: {{colormap[value.high.device]}}">({{value.high.device}})</span></td>
+              <td>{{value.low.value}} <span style="color: {{colormap[value.average.device]}}">({{value.average.device}})</span></td>
+              <td>{{value.average.value}} <span style="color: {{colormap[value.average.device]}}">({{value.average.device}})</span></td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="row" ng-repeat="device in mapreducedata" ng-show="show[device._id]">
+          <table class="table table-condensed table-bordered table-hover white">
+            <tr><th colspan=4>Showing results for: <span style="color: {{colormap[device._id]}}">{{device._id ? device._id : 'N/A'}}</span> ({{device.emitted}} packets reduced)
+
+            <span class="label label-danger">{{mapreduceerror}}</span></th></tr>
+            <tr><th>Metric</th><th>High</th><th>Low</th><th>Average</th></tr>
+            <tr ng-repeat="(key, value) in device.value" >
+              <td>{{key}}</td>
+              <td style="color: {{colormap[device._id]}}">{{value.high}}</td>
+              <td style="color: {{colormap[device._id]}}">{{value.low}}</td>
+              <td style="color: {{colormap[device._id]}}">{{value.total / value.count}}</td>
             </tr>
           </table>
         </div>

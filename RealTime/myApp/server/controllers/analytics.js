@@ -21,6 +21,11 @@ exports.reduce = function(req, res) {
                 error: err
             });
         } else {
+            for (var i = 0; i < results.length; i++) {
+                var keys = Object.keys(results[i].value);
+                results[i].emitted = results[i].value[keys[0]].count;
+            }
+
             res.jsonp(results);
         }
 
