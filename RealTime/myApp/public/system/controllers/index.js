@@ -394,9 +394,14 @@ angular.module('mean.system').controller('IndexController',
                 data: $scope.mapreduce
             }).success(function(data) {
                 console.log('Map reduce done.');
-                $scope.mapreducedata = data[0];
+                if (data.error) {
+                    $scope.mapreduceerror = data.error;
+                } else {
+                    $scope.mapreducedata = data[0];
+                    $scope.mapreduceerror = '';
+                }
             }).error(function(err) {
-
+                $scope.mapreducedata = err;
             });
         }
     };

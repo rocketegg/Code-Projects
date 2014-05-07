@@ -15,7 +15,14 @@ exports.reduce = function(req, res) {
 
     var reducer = new MapReduce();
     reducer.reduce(device, metricKeys, startTime, endTime, function(err, results) {
-        if (err) throw err;
-        res.jsonp(results);
+        if (err) {
+            console.log(err);
+            res.jsonp({
+                error: err
+            });
+        } else {
+            res.jsonp(results);
+        }
+
     });
 };

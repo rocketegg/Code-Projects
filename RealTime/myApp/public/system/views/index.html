@@ -51,6 +51,12 @@
               </div>
             </div>
             <div class="form-group">
+              <label class="col-lg-4 control-label">Extension</label>
+              <div class="col-lg-8">
+                <input ng-model="mapreduce.device.extension"/>
+              </div>
+            </div>
+            <div class="form-group">
               <label class="col-lg-4 control-label">Metrics</label>
               <div class="col-lg-8">
               <multiselect class="input-xlarge"
@@ -180,7 +186,7 @@
 
         <div class="row">
           <table class="table table-condensed table-bordered table-hover white">
-            <tr><th colspan=4>Showing results for: {{mapreducedata._id ? mapreducedata._id : 'N/A'}}</th></tr>
+            <tr><th colspan=4>Showing results for: {{mapreducedata._id ? mapreducedata._id : 'N/A'}} <span class="label label-danger">{{mapreduceerror}}</span></th></tr>
             <tr><th>Metric</th><th>High</th><th>Low</th><th>Average</th></tr>
             <tr ng-repeat="(key, value) in mapreducedata.value">
               <td>{{key}}</td>

@@ -25,7 +25,9 @@ function makeid() {
 //Entry method
 function decode (msg, rinfo) {
     try {
-        decode_packets(msg, rinfo, 0);
+        var timestamp = new Date().getTime();
+        console.log("[DECODE]: Decoding udp message with timestamp: %s", timestamp);
+        decode_packets(msg, rinfo, 0, timestamp);
     } catch (err) {
         throw err;
     }
@@ -33,7 +35,7 @@ function decode (msg, rinfo) {
 
 //The master decoder - will call the correct function based on the packet type
 //Gets called multiple times depending on if the payload still has more packets to decode
-function decode_packets(msg, rinfo, offset) {
+function decode_packets(msg, rinfo, offset, timestamp) {
     function writeToFile(msg) {
         var filename = 'rtcp_packets_' + makeid();
         console.log('---Writing byte stream to' + filename);
@@ -68,6 +70,7 @@ function decode_packets(msg, rinfo, offset) {
                 mongoPacket.metadata.TYPE = packet.type;
                 mongoPacket.metadata.LENGTH = packet.packet_length;
                 mongoPacket.data = packet.data;
+                mongoPacket.timestamp = timestamp;
                 mongoPacket.save(function(err, packet) {
                     console.log('\tDone inserting ' + packet._id + ' into mongodb.');
                 });
@@ -81,7 +84,7 @@ function decode_packets(msg, rinfo, offset) {
             console.log('\tError: Unknown packet type: ' + packet.type);
         }
 
-        decode_packets(msg, rinfo, offset + 4 + packet.packet_length * 4);
+        decode_packets(msg, rinfo, offset + 4 + packet.packet_length * 4, timestamp);
     } else {
         console.log('[DECODER] decoding UDP message complete.');
     }
@@ -89,7 +92,7 @@ function decode_packets(msg, rinfo, offset) {
 
 //Decode SR type packet
 function decode_200(msg, offset) {
-    
+
     //Reads a report block, pass in an offset in bytes
     function decode_report_block(msg, offset) {
         var report_block = {};
