@@ -11,6 +11,14 @@ angular.module('mean.system').config(['$stateProvider', '$urlRouterProvider',
                 .state('home', {
                     url: '/',
                     templateUrl: 'public/system/views/index.html'
+                })                
+                .state('device statistics', {
+                    url: '/',
+                    templateUrl: 'public/system/views/devices.html'
+                })
+                .state('packet simulator', {
+                    url: '/',
+                    templateUrl: 'public/system/views/index.html'
                 })
                 .state('auth', {
                     templateUrl: 'public/auth/views/index.html'
