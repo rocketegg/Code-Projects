@@ -8,9 +8,9 @@ angular.module('mean.system').controller('IndexController',
 
     $scope.options = {
     	interval: '5',
-    	iterations: 10,
+    	iterations: 1,
     	ip: '127.0.0.1',
-    	port: 5006
+    	port: 5005
     };
 
     var poller;

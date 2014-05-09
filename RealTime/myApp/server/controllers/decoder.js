@@ -24,9 +24,20 @@ function makeid() {
 
 //Entry method
 function decode (msg, rinfo) {
+    function writeToFile(msg) {
+        var filename = 'rtcp_packets_' + makeid();
+        console.log('---Writing byte stream to' + filename);
+        var wstream = fs.createWriteStream('./packets/' + filename);
+        wstream.write(msg);
+        wstream.end();
+        console.log('---Done.');
+    }
+
     try {
         var timestamp = new Date().getTime();
         console.log("[DECODE]: Decoding udp message with timestamp: %s", timestamp);
+        //UNCOMMENT THIS TO WRITE SOME PACKETS TO THE packets dir
+        //writeToFile(msg);
         decode_packets(msg, rinfo, 0, timestamp);
     } catch (err) {
         throw err;
@@ -36,14 +47,7 @@ function decode (msg, rinfo) {
 //The master decoder - will call the correct function based on the packet type
 //Gets called multiple times depending on if the payload still has more packets to decode
 function decode_packets(msg, rinfo, offset, timestamp) {
-    function writeToFile(msg) {
-        var filename = 'rtcp_packets_' + makeid();
-        console.log('---Writing byte stream to' + filename);
-        var wstream = fs.createWriteStream('./packets/' + filename);
-        wstream.write(msg);
-        wstream.end();
-        console.log('---Done.');
-    }
+
 
     if (offset < msg.length) {
         //console.log('First Byte: ' + msg.readUInt32BE(offset + 0).toString(2));
@@ -56,29 +60,32 @@ function decode_packets(msg, rinfo, offset, timestamp) {
         packet.report_count = msg.readUInt8(offset) & 31;   //bits 3 - 7
         packet.packet_length = msg.readUInt16BE(offset + 2);
 
-        //UNCOMMENT THIS TO WRITE SOME PACKETS TO THE packets dir
-        //writeToFile(msg);
-
         if (decoders[packet.type]) {
-            packet.data = decoders[packet.type](msg, offset);
+            try {
+                packet.data = decoders[packet.type](msg, offset);    
+                //Ignore packets that couldn't be decoded
+                if (packet.data) {
+                    var Packet = mongoose.model('Packet');
+                    var mongoPacket = new Packet();
+                    mongoPacket.device.IP_ADDRESS = packet.IP;
+                    mongoPacket.metadata.TYPE = packet.type;
+                    mongoPacket.metadata.LENGTH = packet.packet_length;
+                    mongoPacket.data = packet.data;
+                    mongoPacket.timestamp = timestamp;
+                    mongoPacket.save(function(err, packet) {
+                        console.log('\tDone inserting ' + packet._id + ' into mongodb.');
+                    });
 
-            //Ignore packets that couldn't be decoded
-            if (packet.data) {
-                var Packet = mongoose.model('Packet');
-                var mongoPacket = new Packet();
-                mongoPacket.device.IP_ADDRESS = packet.IP;
-                mongoPacket.metadata.TYPE = packet.type;
-                mongoPacket.metadata.LENGTH = packet.packet_length;
-                mongoPacket.data = packet.data;
-                mongoPacket.timestamp = timestamp;
-                mongoPacket.save(function(err, packet) {
-                    console.log('\tDone inserting ' + packet._id + ' into mongodb.');
-                });
-
-                //if (packet.type === 200 || packet.type === 201 || packet.type === 204)    //only print sender/receiver reports
-                //console.log(JSON.stringify(packet, undefined, 2));
-            } else {
-                console.log('\tError: Packet could not be decoded. ');
+                    //if (packet.type === 204 && packet.data.subtype === 5)    //only print sender/receiver reports
+                        console.log(JSON.stringify(packet, undefined, 2));
+                } else {
+                    console.log('\tError: Packet could not be decoded. ');
+                }
+            } catch (err) {
+                console.log("Error decoding packet: " + err);
+                console.log(packet.data);
+                //UNCOMMENT THIS LINE TO BREAK THE DECODER UPON A FAILED DECODING
+                //throw err;
             }
         } else {
             console.log('\tError: Unknown packet type: ' + packet.type);
@@ -327,7 +334,7 @@ var avaya_bit_map = {
 }
 
 function decode_204(msg, offset) {
-    console.log('[DECODER] Found 204 - Application-Defined');
+    
     //Follows the RTCP spec
     var data = {
         subtype: msg.readUInt8(offset) & 31,
@@ -336,6 +343,8 @@ function decode_204(msg, offset) {
             avaya:{}
         }
     };
+    console.log('[DECODER] Found 204 - Application-Defined Subtype [%s]', data.subtype);
+
     data.ssrc = msg.readUInt32BE(offset + 4);
     data.name = msg.toString('ascii', offset + 8, offset + 12);
 
@@ -355,11 +364,109 @@ function decode_204(msg, offset) {
                 data.qos.avaya[key] = msg.readUInt32BE(avaya_bit_map[key].start);
             }
         }
+    } else if (data.name === '-AV-' && data.subtype === 5) {
+        data.ssrc_inc_rtp_stream = msg.readUInt32BE(offset + 12);
+        data.metric_mask = msg.readUInt32BE(offset + 16);
+        console.log('metric mask for 204 subtype 5: ', data.metric_mask.toString(2));
+        data.routing = {
+            avaya: {}
+        };
+        //Compute routing information
+        data.routing.avaya.MID_GATEKEEPER_ADDR = getIPv4Address(msg.readUInt32BE(offset + 20));
+
+        //try to read IPv4 Traceroute Information
+        var avaya_subtype_5 = {
+            MID_TRACE_ROUTE_HOPCOUNT: {
+                bit_mask: 1
+            }, 
+            MID_TRACE_ROUTE_PERHOP: {
+                bit_mask: 2
+            },
+            MID_OUT_RTP_SRC_PORT: {
+                bit_mask: 3
+            }, 
+            MID_OUT_RTP_DEST_PORT: {
+                bit_mask: 4
+            },
+            MID_GATEWAY_ADDR: {
+                bit_mask: 5
+            }, 
+            MID_SUBNET_MASK: {
+                bit_mask: 6
+            },
+            MID_GATEKEEPER_ADDR6: {
+                bit_mask: 7
+            }, 
+            MID_TRACE_ROUTE6_PERHOP: {
+                bit_mask: 8
+            },
+            MID_GATEWAY_ADDR6: {
+                bit_mask: 9
+            }, 
+            MID_PREFIX_LENGTH: {
+                bit_mask: 10
+            }
+        }
+        if (getEnabled(data.metric_mask, avaya_subtype_5.MID_TRACE_ROUTE_HOPCOUNT.bit_mask) &&
+            data.length > 5) {
+            data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT = msg.readUInt8(offset + 24);
+            console.log("getting hop count: %s", data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT );
+            console.log(data);
+            //Decode Hops
+            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_TRACE_ROUTE_PERHOP.bit_mask)) {
+                data.routing.avaya.MID_TRACE_ROUTE_PERHOP = [];
+                for (var i = 0; i < data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT; i++) {
+                    var hopInfo = {};
+                    hopInfo.hop = i;
+                    hopInfo.IP_ADDRESS = getIPv4Address(msg.readUInt32BE(offset + 25 + 6 * i));
+                    hopInfo.RTT_of_hop = msg.readUInt16BE(offset + 25 + 6 * i + 4);
+                    data.routing.avaya.MID_TRACE_ROUTE_PERHOP.push(hopInfo);
+                }
+            }
+
+            var hopcountoffset = offset + 24 + 6 * data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT + 1;
+            //RTP SRC PORT
+            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_OUT_RTP_SRC_PORT.bit_mask)) {
+                data.routing.avaya.MID_OUT_RTP_SRC_PORT = msg.readUInt16BE(hopcountoffset);
+            }
+
+            //RTP DEST PORT
+            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_OUT_RTP_DEST_PORT.bit_mask)) {
+                data.routing.avaya.MID_OUT_RTP_DEST_PORT = msg.readUInt16BE(hopcountoffset + 2);
+            }
+
+            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_GATEWAY_ADDR.bit_mask)) {
+                data.routing.avaya.MID_GATEWAY_ADDR = msg.readUInt32BE(hopcountoffset + 4);
+            }
+
+            //RTP DEST PORT
+            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_SUBNET_MASK.bit_mask)) {
+                data.routing.avaya.MID_SUBNET_MASK = msg.readUInt16BE(hopcountoffset + 8);
+            }
+           
+        }
+
+
     } else {
         console.log('\tIgnoring 204 packet with name: [%s] and subtype [%d].  Don\'t know how to decode!', data.name, data.subtype);
         return undefined;
     }
     return data;
+}
+
+//Avaya specific function to tell you if a field is enabled based on the metric mask
+function getEnabled(metric_mask, bit_pos) {
+    return ((metric_mask >>> (31 - bit_pos)) & 1) === 1 ? true : false;
+}
+
+//Returns a string based on a 32 bit int
+function getIPv4Address(int32) {
+    var ipv4 = '';
+    ipv4 =  ((int32 & 0xFF000000) >> 24).toString() + '.' + 
+            ((int32 & 0x00FF0000) >> 16).toString() + '.' + 
+            ((int32 & 0x0000FF00) >> 8).toString() + '.' + 
+            (int32 & 0x000000FF).toString();
+    return ipv4;
 }
 
 function findNextWord(octet) {

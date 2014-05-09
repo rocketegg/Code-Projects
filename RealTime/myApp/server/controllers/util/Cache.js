@@ -4,15 +4,24 @@
 var mongoose = require('mongoose'),
     _ = require('lodash');
 
-//preps object for delivery
-function serializeObject(value) {
-    var newobj;
-    return _.extend(value, newobj);
-}
-
 var Cache = function () {
     //private cache
     var cache = {};
+
+    //preps object for delivery
+    function serializeObject(value) {
+        var newobj;
+        return _.extend(value, newobj);
+    }
+
+    function getRandomKey() {
+        var keys = Object.keys(cache);
+        if (!keys || keys.length < 1) {
+            return {};
+        } else {
+            return keys[Math.floor(Math.random() * keys.length)];
+        }
+    }
 
     return {
         //Clear cache
@@ -46,6 +55,10 @@ var Cache = function () {
             } else {
                 return serializeObject(cache[keys[Math.floor(Math.random() * keys.length)]]);
             }
+        },
+
+        getRandomKey: function() {
+            return getRandomKey();
         }
     };
 };

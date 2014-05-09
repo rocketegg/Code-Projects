@@ -48,6 +48,8 @@ MapReduceAggregator.prototype.query = function(device, metricKey, startTime, end
         }, {
           'metadata.TYPE': 204
         },{
+          'data.subtype': 4
+        },{
           timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) }
         }]
       };
