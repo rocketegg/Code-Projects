@@ -115,6 +115,7 @@ angular.module('mean.system').controller('IndexController',
             createChartQOSObjects(data);
     		createChartStatObjects(data, responseTime);
     	}).error(function(data, status, headers, config) {
+            var responseTime = new Date().getTime() - currentTime;
     		console.log('error');
     		createChartStatObjects(data, responseTime);
     	});

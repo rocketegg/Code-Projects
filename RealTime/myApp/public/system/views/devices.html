@@ -93,9 +93,9 @@
             <tr><th>Metric</th><th>High</th><th>Low</th><th>Average (High)</th></tr>
             <tr ng-repeat="(key, value) in aggregate">
               <td>{{key}}</td>
-              <td>{{value.high.value}} <span style="color: {{colormap[value.high.device]}}">({{value.high.device}})</span></td>
-              <td>{{value.low.value}} <span style="color: {{colormap[value.average.device]}}">({{value.average.device}})</span></td>
-              <td>{{value.average.value}} <span style="color: {{colormap[value.average.device]}}">({{value.average.device}})</span></td>
+              <td>{{value.high.value}} <span style="color: {{colormap[value.high.device]}}" ng-show="value.high.device">({{value.high.device}})</span></td>
+              <td>{{value.low.value}} <span style="color: {{colormap[value.low.device]}}" ng-show="value.low.device">({{value.low.device}})</span></td>
+              <td>{{value.average.value}} <span style="color: {{colormap[value.average.device]}}" ng-show="value.average.device">({{value.average.device}})</span></td>
             </tr>
           </table>
         </div>

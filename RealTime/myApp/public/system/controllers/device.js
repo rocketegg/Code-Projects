@@ -63,6 +63,8 @@ angular.module('mean.system').controller('DeviceController',
     	}).error(function(data, status, headers, config) {
     		console.log('error');
     	});
+
+        updateChartRange($scope.slidervalue);
     };
 
     $scope.history = [];

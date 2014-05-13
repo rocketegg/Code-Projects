@@ -220,119 +220,164 @@ function decode_203(msg, offset) {
 
 //Decode App type packet - This is Avaya Specific
 //Follows the packet schema for keys, start = starting byte, size: # of bytes
+//note Keep these in order of bit_mask since it's used as a counter
 var avaya_bit_map = {
+    //Field Name: RTP Packet Count
+    MID_RTP_PACKET_COUNT: {
+        start: 20,
+        size: 4,
+        bit_mask: 0
+    },
+    //Field Name: RTP Octet Count
+    MID_RTP_OCTET_COUNT: {
+        start: 24,
+        size: 4,
+        bit_mask: 1
+    },
     //Field Name: RTCP Round Trip Time
     MID_RTCP_RTT: {
         start: 28,
-        size: 2
+        size: 2,
+        bit_mask: 2
     },
     //Field Name: Jitter Buffer Delay
     MID_JITTER_BUFFER_DELAY: {
         start: 30,
-        size: 2
+        size: 2,
+        bit_mask: 3
     },
     //Field Name: Largest Sequence Jump
     MID_LARGEST_SEQ_JUMP: {
         start: 32,
-        size: 1
+        size: 1,
+        bit_mask: 4
     },
     //Field Name: Largest Sequence Fall
     MID_LARGEST_SEQ_FALL: {
         start: 33,
-        size: 1
+        size: 1,
+        bit_mask: 5
     },
     //Field Name: RSVP Status
     MID_RSVP_RECEIVER_STATUS: {
         start: 34,
-        size: 1
+        size: 1,
+        bit_mask: 6
     },
     //Field Name: Maximum Jitter
     MID_MAX_JITTER: {
         start: 35,
-        size: 4
+        size: 4,
+        bit_mask: 7
     },
     //Field Name: Jitter Buffer Underruns
     MID_JITTER_BUFFER_UNDERRUNS: {
         start: 39,
-        size: 1
+        size: 1,
+        bit_mask: 8
     },
     //Field Name: Jitter Buffer Overruns
     MID_JITTER_BUFFER_OVERRUNS: {
         start: 40,
-        size: 1
+        size: 1,
+        bit_mask: 9
     },
     //Field Name: Sequence Jump Instances
     MID_SEQ_JUMP_INSTANCES: {
         start: 41,
-        size: 4
+        size: 4,
+        bit_mask: 10
     },
     //Field Name: Sequence Fall Instances
     MID_SEQ_FALL_INSTANCES: {
         start: 45,
-        size: 4
+        size: 4,
+        bit_mask: 11
     },
     //Field Name: Echo Tail Length
     MID_ECHO_TAIL_LENGTH: {
         start: 49,
-        size: 1
+        size: 1,
+        bit_mask: 12
+    },
+    //Field Name: Remote IP Address
+    MID_IP_ADDR: {
+        start: 50,
+        size: 4,
+        IP: true,
+        bit_mask: 13
     },
     //Field Name: Remote IP Address & RTCP Port
     MID_ADDR_PORT: {
         start: 54,
-        size: 2
+        size: 2,
+        bit_mask: 13
     },
     //Field Name: RTP Payload Type
     MID_PAYLOAD_TYPE: {
         start: 56,
-        size: 1
+        size: 1,
+        bit_mask: 14
     },
     //Field Name: Frame Size
     MID_FRAME_SIZE: {
         start: 57,
-        size: 1
+        size: 1,
+        bit_mask: 15
     },
     //Field Name: Time To Live
     MID_RTP_TTL: {
         start: 58,
-        size: 1
+        size: 1,
+        bit_mask: 16
     },
     //Field Name: DiffServ Code Point
     MID_RTP_DSCP: {
         start: 59,
-        size: 1
+        size: 1,
+        bit_mask: 17
     },
     //Field Name: 802.1D
     MID_RTP_8021D: {
         start: 60,
-        size: 2
+        size: 2,
+        bit_mask: 18
     },
     //Field Name: Media Encryption
     MID_MEDIA_ENCYPTION: {
         start: 52,
-        size: 1
+        size: 1,
+        bit_mask: 19
     },
     //Field Name: Silence Suppression
     MID_SILENCE_SUPPRESSION: {
         start: 63,
-        size: 1
+        size: 1,
+        bit_mask: 20
     },
     //Field Name: Acoustic Echo Cancellation
     MID_ECHO_CANCELLATION: {
         start: 64,
-        size: 1
+        size: 1,
+        bit_mask: 21
     },
     //Field Name: Incoming Stream RTP Source Port
     MID_IN_RTP_SRC_PORT: {
         start: 65,
-        size: 2
+        size: 2,
+        bit_mask: 22
     },
     //Field Name: Incoming Stream RTP Destination Port
     MID_IN_RTP_DEST_PORT: {
         start: 67,
-        size: 2
+        size: 2,
+        bit_mask: 23
     }
 }
 
+/*
+* NOTE: avaya metric mask is determinative of the values to go through
+*/
 function decode_204(msg, offset) {
     
     //Follows the RTCP spec
@@ -352,7 +397,7 @@ function decode_204(msg, offset) {
     if (data.name === '-AV-' && data.subtype === 4) {
         data.ssrc_inc_rtp_stream = msg.readUInt32BE(offset + 12);
         data.metric_mask = msg.readUInt32BE(offset + 16);
-        data.received_rtp_packets = msg.readUInt32BE(offset + 20);
+        /*data.received_rtp_packets = msg.readUInt32BE(offset + 20);
         data.received_rtp_octets= msg.readUInt32BE(offset + 24);
 
         for (var key in avaya_bit_map) {
@@ -360,8 +405,27 @@ function decode_204(msg, offset) {
                 data.qos.avaya[key] = msg.readUInt8(avaya_bit_map[key].start);
             } else if (avaya_bit_map[key].size === 2) {
                 data.qos.avaya[key] = msg.readUInt16BE(avaya_bit_map[key].start);
+            } else if (avaya_bit_map[key].IP === true) {
+                data.qos.avaya[key] = getIPv4Address(msg.readUInt32BE(avaya_bit_map[key].start));
             } else if (avaya_bit_map[key].size === 4) {
                 data.qos.avaya[key] = msg.readUInt32BE(avaya_bit_map[key].start);
+            }
+        }*/
+        var ptr = 20;   //start at first value
+        //avaya_bit_map = 
+        for (var key in avaya_bit_map) {
+            if (getEnabled(data.metric_mask, avaya_bit_map[key].bit_mask)) {
+                console.log('%s is enabled', key);
+                if (avaya_bit_map[key].size === 1) {
+                data.qos.avaya[key] = msg.readUInt8(ptr);
+                } else if (avaya_bit_map[key].size === 2) {
+                    data.qos.avaya[key] = msg.readUInt16BE(ptr);
+                } else if (avaya_bit_map[key].IP === true) {
+                    data.qos.avaya[key] = getIPv4Address(msg.readUInt32BE(ptr));
+                } else if (avaya_bit_map[key].size === 4) {
+                    data.qos.avaya[key] = msg.readUInt32BE(ptr);
+                }
+                ptr += avaya_bit_map[key].size;
             }
         }
     } else if (data.name === '-AV-' && data.subtype === 5) {

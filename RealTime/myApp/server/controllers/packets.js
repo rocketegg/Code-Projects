@@ -160,14 +160,14 @@ exports.start = function(req, res) {
             //Uncomment to send random data:
             var key = packetCache.getRandomKey();
             console.log("\tSending Packet: %s", key);
-            //var data = packetCache.getItem(key);
+            var data = packetCache.getItem(key);
             // Sending Packet: rtcp_packets_ih3oU
             // Sending Packet: rtcp_packets_7Coc8
             // Sending Packet: rtcp_packets_ih3oU
             // Sending Packet: rtcp_packets_7Coc8
             // Sending Packet: rtcp_packets_3Guln
             //Uncomment to send fixed data:
-            var data = packetCache.getItem('rtcp_packets_ih3oU');
+            //var data = packetCache.getItem('rtcp_packets_ih3oU');
             client.send(data, 0, data.length, port, ip, function(err, bytes) {
                 if (err) throw err;
             });
