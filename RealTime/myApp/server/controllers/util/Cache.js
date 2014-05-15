@@ -48,6 +48,10 @@ var Cache = function () {
             cache[key] = val;
         },
 
+        hasKey: function(key) {
+            return cache.hasOwnProperty(key);
+        },
+
         getRandomVal: function() {
             var keys = Object.keys(cache);
             if (!keys || keys.length < 1) {

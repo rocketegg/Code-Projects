@@ -1,0 +1,41 @@
+<section data-ng-controller="VisualizationController">
+  <div class="row">
+    <div class="col-sm-12">
+      <form class="form-horizontal">
+        <fieldset>
+         <legend>Device Visualization</legend>
+            <div class="form-group">
+              <label class="col-lg-2 control-label">IPs (comma separated)</label>
+              <div class="col-lg-10">
+                <input ng-model="options.IP_ADDRESS"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-lg-10 col-lg-offset-2">
+                <button type="submit" ng-click="togglePolling()" class="btn btn-info btn-sm" ng-show="!isPolling">Visualize</button>
+                <button type="submit" ng-click="togglePolling()" class="btn btn-danger btn-sm" ng-show="isPolling">Stop</button>
+              </div>
+            </div>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+
+  <div class="row" ng-repeat="(key, value) in chartObjects">
+    <div class="col-sm-12 well">
+      <div google-chart chart="value"></div>
+      <table class="table table-condensed table-bordered table-hover normal white">
+        <tr>
+          <td colspan=5><span class="bold">Averages for</span> {{key}}    <span class="bold">Reporting Interval: </span>{{visualizationdata[key].averages.duration}} ms</td>
+        </tr>
+        <tr>
+          <th></th><th>RTP Packet Flow (Avg.)</th><th>Packet Loss Rate (Avg.)</th><th>Packet Out of Order Rate (Avg.)</th><th>Jitter (Avg.)</th>
+        </tr>
+        <tr>
+          <td></td><td>{{visualizationdata[key].averages.rtp_rate}}</td><td>{{visualizationdata[key].averages.rtp_loss_rate}}</td><td>{{visualizationdata[key].averages.rtp_ooo_rate}}</td><td>{{visualizationdata[key].averages.rtp_jitter}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+</section>

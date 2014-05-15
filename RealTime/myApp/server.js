@@ -7,9 +7,10 @@ var mean = require('meanio'),
 	decoder = require('./server/controllers/decoder.js'),
 	Aggregator = require ('./server/controllers/util/Aggregator.js'),
 	Purger = require ('./server/controllers/util/Purger.js'),
-	CronJob = require('cron').CronJob;
+	CronJob = require('cron').CronJob,
+  DecoderCache = require('./server/controllers/util/DecoderCache.js');
 
-mean.app('Mean Demo App',{});
+mean.app('RTCP Collector Prototype',{});
 
 /**
  * Module dependencies.
@@ -40,6 +41,7 @@ console.log('Express app started on port ' + config.port);
 
 var server = dgram.createSocket('udp4');
 var _decoder = new decoder();
+var _decoderCache = new DecoderCache(12);
 
 server.on('error', function (err) {
   console.log('server error:\n' + err.stack);
@@ -48,7 +50,8 @@ server.on('error', function (err) {
 
 server.on('message', function (msg, rinfo) {
   console.log('[LISTENER] Received a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s] of size [%d] bytes.', new Date(), msg.length);
-  _decoder.decode(msg, rinfo);
+  var decoded = _decoder.decode(msg, rinfo);  //decoded is a bundle of decoded packets that eventually will get saved to mongodb (at some point)
+  _decoderCache.pushPackets(rinfo.address, decoded);
 });
 
 server.on('listening', function () {

@@ -3,7 +3,9 @@
 /**
  * Module dependencies.
  */
-var MapReduce = require('./util/MapReduce.js');
+var MapReduce = require('./util/MapReduce.js'),
+    DecoderCache = require('./util/DecoderCache.js'),
+    Analytic = require('./util/Analytic.js');
 
 exports.reduce = function(req, res) {
     console.log('[ANALYTICS] Beginning custom MapReduce.');
@@ -30,4 +32,37 @@ exports.reduce = function(req, res) {
         }
 
     });
+};
+
+function splitIPs(ip_string) {
+  var IPs = ip_string.split(',');
+  for (var i = 0; i < IPs.length; i++) {
+    IPs[i] = IPs[i].trim();
+  }
+  return IPs;
+}
+
+exports.window = function(req, res) {
+    console.log('[ANALYTICS] Returning metric interval for IPs %s.', req.query.IP_ADDRESS);
+    var _analytic = new Analytic();
+    var IPs = splitIPs(req.query.IP_ADDRESS);
+
+    var countdown = IPs.length;
+    var response = {};
+    for (var i = 0; i < IPs.length; i++) {
+        _analytic.computeMos(IPs[i], function(metrics) {
+            response[IPs[i]] = metrics;
+            countdown--;
+            if (countdown === 0) {
+                res.jsonp({
+                    active_devices: response
+                });
+            }
+        });
+    }
+    // _analytic.computeMos('127.0.0.1', function(metrics) {
+    //     res.jsonp({
+    //         active_devices: metrics
+    //     });
+    // });
 };

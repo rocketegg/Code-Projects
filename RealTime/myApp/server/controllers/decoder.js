@@ -23,10 +23,12 @@ function makeid() {
 }
 
 //Entry method
-function decode (msg, rinfo) {
-    function writeToFile(msg) {
-        var filename = 'rtcp_packets_' + makeid();
-        console.log('---Writing byte stream to' + filename);
+function decode (msg, rinfo, filename) {
+    function writeToFile(msg, filename) {
+        if (!filename) {
+            filename = 'rtcp_packets_' + makeid();
+        }
+        console.log('---Writing byte stream to: ' + filename);
         var wstream = fs.createWriteStream('./packets/' + filename);
         wstream.write(msg);
         wstream.end();
@@ -37,8 +39,10 @@ function decode (msg, rinfo) {
         var timestamp = new Date().getTime();
         console.log("[DECODE]: Decoding udp message with timestamp: %s", timestamp);
         //UNCOMMENT THIS TO WRITE SOME PACKETS TO THE packets dir
-        //writeToFile(msg);
-        decode_packets(msg, rinfo, 0, timestamp);
+        //writeToFile(msg, filename);
+        var decoded = [];   //This code currently runs synchronously, pushing each decoded packet on the array, which is returned
+        decode_packets(msg, rinfo, 0, timestamp, decoded);
+        return decoded;
     } catch (err) {
         throw err;
     }
@@ -46,9 +50,7 @@ function decode (msg, rinfo) {
 
 //The master decoder - will call the correct function based on the packet type
 //Gets called multiple times depending on if the payload still has more packets to decode
-function decode_packets(msg, rinfo, offset, timestamp) {
-
-
+function decode_packets(msg, rinfo, offset, timestamp, decoded) {
     if (offset < msg.length) {
         //console.log('First Byte: ' + msg.readUInt32BE(offset + 0).toString(2));
         var packet = {
@@ -76,8 +78,11 @@ function decode_packets(msg, rinfo, offset, timestamp) {
                         console.log('\tDone inserting ' + packet._id + ' into mongodb.');
                     });
 
-                    //if (packet.type === 204 && packet.data.subtype === 5)    //only print sender/receiver reports
+                    if (packet.type === 204 && packet.data.subtype === 5 || packet.data.subtype === 4)    //only print sender/receiver reports
                         console.log(JSON.stringify(packet, undefined, 2));
+
+                    //TODO: can make this run asynchronously
+                    decoded.push(mongoPacket);
                 } else {
                     console.log('\tError: Packet could not be decoded. ');
                 }
@@ -91,7 +96,7 @@ function decode_packets(msg, rinfo, offset, timestamp) {
             console.log('\tError: Unknown packet type: ' + packet.type);
         }
 
-        decode_packets(msg, rinfo, offset + 4 + packet.packet_length * 4, timestamp);
+        decode_packets(msg, rinfo, offset + 4 + packet.packet_length * 4, timestamp, decoded);
     } else {
         console.log('[DECODER] decoding UDP message complete.');
     }
@@ -375,6 +380,55 @@ var avaya_bit_map = {
     }
 }
 
+//try to read IPv4 Traceroute Information
+var avaya_subtype_5 = {
+    MID_GATEKEEPER_ADDR: {
+        size: 4,
+        bit_mask: 0,
+        IP: true
+    }, 
+    MID_TRACE_ROUTE_HOPCOUNT: {
+        size: 1,
+        bit_mask: 1
+    }, 
+    MID_TRACE_ROUTE_PERHOP: {
+        size: 6,
+        bit_mask: 2
+    },
+    MID_OUT_RTP_SRC_PORT: {
+        size: 2,
+        bit_mask: 3
+    }, 
+    MID_OUT_RTP_DEST_PORT: {
+        size: 2,
+        bit_mask: 4
+    },
+    MID_GATEWAY_ADDR: {
+        size: 4,
+        bit_mask: 5
+    }, 
+    MID_SUBNET_MASK: {
+        size: 4,
+        bit_mask: 6
+    },
+    MID_GATEKEEPER_ADDR6: {
+        size: 16,
+        bit_mask: 7
+    }, 
+    MID_TRACE_ROUTE6_PERHOP: {
+        size: 18,
+        bit_mask: 8
+    },
+    MID_GATEWAY_ADDR6: {
+        size: 16,
+        bit_mask: 9
+    }, 
+    MID_PREFIX_LENGTH: {
+        size: 1,
+        bit_mask: 10
+    }
+}
+
 /*
 * NOTE: avaya metric mask is determinative of the values to go through
 */
@@ -397,25 +451,10 @@ function decode_204(msg, offset) {
     if (data.name === '-AV-' && data.subtype === 4) {
         data.ssrc_inc_rtp_stream = msg.readUInt32BE(offset + 12);
         data.metric_mask = msg.readUInt32BE(offset + 16);
-        /*data.received_rtp_packets = msg.readUInt32BE(offset + 20);
-        data.received_rtp_octets= msg.readUInt32BE(offset + 24);
-
-        for (var key in avaya_bit_map) {
-            if (avaya_bit_map[key].size === 1) {
-                data.qos.avaya[key] = msg.readUInt8(avaya_bit_map[key].start);
-            } else if (avaya_bit_map[key].size === 2) {
-                data.qos.avaya[key] = msg.readUInt16BE(avaya_bit_map[key].start);
-            } else if (avaya_bit_map[key].IP === true) {
-                data.qos.avaya[key] = getIPv4Address(msg.readUInt32BE(avaya_bit_map[key].start));
-            } else if (avaya_bit_map[key].size === 4) {
-                data.qos.avaya[key] = msg.readUInt32BE(avaya_bit_map[key].start);
-            }
-        }*/
-        var ptr = 20;   //start at first value
-        //avaya_bit_map = 
+        var ptr = offset + 20;   //start at first value
         for (var key in avaya_bit_map) {
             if (getEnabled(data.metric_mask, avaya_bit_map[key].bit_mask)) {
-                console.log('%s is enabled', key);
+                //console.log('%s is enabled', key);
                 if (avaya_bit_map[key].size === 1) {
                 data.qos.avaya[key] = msg.readUInt8(ptr);
                 } else if (avaya_bit_map[key].size === 2) {
@@ -435,43 +474,44 @@ function decode_204(msg, offset) {
         data.routing = {
             avaya: {}
         };
-        //Compute routing information
-        data.routing.avaya.MID_GATEKEEPER_ADDR = getIPv4Address(msg.readUInt32BE(offset + 20));
 
-        //try to read IPv4 Traceroute Information
-        var avaya_subtype_5 = {
-            MID_TRACE_ROUTE_HOPCOUNT: {
-                bit_mask: 1
-            }, 
-            MID_TRACE_ROUTE_PERHOP: {
-                bit_mask: 2
-            },
-            MID_OUT_RTP_SRC_PORT: {
-                bit_mask: 3
-            }, 
-            MID_OUT_RTP_DEST_PORT: {
-                bit_mask: 4
-            },
-            MID_GATEWAY_ADDR: {
-                bit_mask: 5
-            }, 
-            MID_SUBNET_MASK: {
-                bit_mask: 6
-            },
-            MID_GATEKEEPER_ADDR6: {
-                bit_mask: 7
-            }, 
-            MID_TRACE_ROUTE6_PERHOP: {
-                bit_mask: 8
-            },
-            MID_GATEWAY_ADDR6: {
-                bit_mask: 9
-            }, 
-            MID_PREFIX_LENGTH: {
-                bit_mask: 10
+        var ptr = offset + 20;
+        //Compute routing information
+        for (var key in avaya_subtype_5) {
+            if (getEnabled(data.metric_mask, avaya_subtype_5[key].bit_mask)) {
+                //console.log('%s is enabled', key);
+                if (avaya_subtype_5[key].size === 1) {
+                    data.routing.avaya[key] = msg.readUInt8(ptr);
+                    ptr += avaya_subtype_5[key].size;
+                } else if (avaya_subtype_5[key].size === 2) {
+                    data.routing.avaya[key] = msg.readUInt16BE(ptr);
+                    ptr += avaya_subtype_5[key].size;
+                } else if (avaya_subtype_5[key].IP === true) {
+                    data.routing.avaya[key] = getIPv4Address(msg.readUInt32BE(ptr));
+                    ptr += avaya_subtype_5[key].size;
+                } else if (avaya_subtype_5[key].size === 4) {
+                    data.routing.avaya[key] = msg.readUInt32BE(ptr);
+                    ptr += avaya_subtype_5[key].size;
+                } else if (avaya_subtype_5[key].size === 6 && key == 'MID_TRACE_ROUTE_PERHOP') {
+                    if (getEnabled(data.metric_mask, avaya_subtype_5['MID_TRACE_ROUTE_HOPCOUNT'].bit_mask)) {
+                        data.routing.avaya['MID_TRACE_ROUTE_PERHOP'] = [];
+                        for (var i = 0; i < data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT; i++) {
+                            var hopInfo = {};
+                            hopInfo.hop = i;
+                            hopInfo.IP_ADDRESS = getIPv4Address(msg.readUInt32BE(ptr));
+                            ptr += 4;
+                            hopInfo.RTT_of_hop = msg.readUInt16BE(ptr);
+                            ptr += 2;
+                            data.routing.avaya.MID_TRACE_ROUTE_PERHOP.push(hopInfo);
+                        }
+                    }
+                } else {
+                    ptr += avaya_subtype_5[key].size;
+                }
             }
         }
-        if (getEnabled(data.metric_mask, avaya_subtype_5.MID_TRACE_ROUTE_HOPCOUNT.bit_mask) &&
+
+        /*if (getEnabled(data.metric_mask, avaya_subtype_5.MID_TRACE_ROUTE_HOPCOUNT.bit_mask) &&
             data.length > 5) {
             data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT = msg.readUInt8(offset + 24);
             console.log("getting hop count: %s", data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT );
@@ -509,7 +549,7 @@ function decode_204(msg, offset) {
             }
            
         }
-
+        */
 
     } else {
         console.log('\tIgnoring 204 packet with name: [%s] and subtype [%d].  Don\'t know how to decode!', data.name, data.subtype);
@@ -542,9 +582,15 @@ function findNextWord(octet) {
 }
 
 var DecoderUtil = function () {
+    var msgCount = 0;
+    var sessionId = makeid();
+
     return {
         decode: function(msg, rinfo) {
-            return decode(msg, rinfo);
+            var filename = 'rtcp_packets_' + sessionId + '_' + msgCount.toString();
+            var decoded = decode(msg, rinfo, filename);
+            msgCount++;
+            return decoded;
         }
     };
 };
