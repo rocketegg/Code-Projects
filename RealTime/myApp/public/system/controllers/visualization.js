@@ -51,6 +51,12 @@ angular.module('mean.system').controller('VisualizationController',
 
     
     function processCharts (active_devices) {
+        for (var key in $scope.chartObjects) {
+            if (!active_devices.hasOwnProperty(key)) {  //device no longer being reported
+                delete $scope.chartObjects[key];
+            }
+        }
+
         for (var key in active_devices) {
             if ($scope.chartObjects.hasOwnProperty(key)) {
                 //update
@@ -140,4 +146,26 @@ angular.module('mean.system').controller('VisualizationController',
   return function(items) {
     return items.slice().reverse();
   };
+})
+
+.directive('arbor', function() {
+    return{
+        restrict: 'A',
+        scope: {graphData1: '=data'},
+        link: function(scope, elem, attrs) {
+            scope.$watch("graphData1", function(v) {
+                console.log("watching graph data");
+                console.log(v);
+                // Initialise arbor
+                sys.parameters({stiffness:600, repulsion:2000, gravity:false, dt:0.015});
+                sys.renderer = Renderer("#viewport");
+                //sys.graft(v);
+                sys.merge(v);
+                sys.tweenNode("KooKoo", 3, {color:"#0431B4", radius:2})
+                //sys.start();
+
+            });
+        }
+    };
 });
+;

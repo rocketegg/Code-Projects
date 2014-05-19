@@ -38,6 +38,11 @@ function splitIPs(ip_string) {
   var IPs = ip_string.split(',');
   for (var i = 0; i < IPs.length; i++) {
     IPs[i] = IPs[i].trim();
+    //IP Validation
+    if (!(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/i.test(IPs[i]))) {
+        console.log("Invalid IP " + IPs[i])
+        IPs.splice(i, 1);
+    }
   }
   return IPs;
 }
@@ -50,7 +55,7 @@ exports.window = function(req, res) {
     var countdown = IPs.length;
     var response = {};
     for (var i = 0; i < IPs.length; i++) {
-        _analytic.computeMos(IPs[i], function(metrics) {
+        _analytic.computeMetrics(IPs[i], function(metrics) {
             response[IPs[i]] = metrics;
             countdown--;
             if (countdown === 0) {
@@ -60,9 +65,4 @@ exports.window = function(req, res) {
             }
         });
     }
-    // _analytic.computeMos('127.0.0.1', function(metrics) {
-    //     res.jsonp({
-    //         active_devices: metrics
-    //     });
-    // });
 };

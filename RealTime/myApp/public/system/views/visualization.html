@@ -25,11 +25,11 @@
     <div class="col-sm-12 well">
       <div google-chart chart="value"></div>
       <table class="table table-condensed table-bordered table-hover normal white">
-        <tr>
-          <td colspan=5><span class="bold">Averages for</span> {{key}}    <span class="bold">Reporting Interval: </span>{{visualizationdata[key].averages.duration}} ms</td>
+        <tr><td></td>
+          <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{visualizationdata[key].averages.duration}} ms</td><td><span class="bold red">CODEC:</span> {{visualizationdata[key].metadata.codec}}</td><td><span class="bold red">Computed MOS:</span> {{visualizationdata[key].averages.mos.MOS}}</td>
         </tr>
         <tr>
-          <th></th><th>RTP Packet Flow (Avg.)</th><th>Packet Loss Rate (Avg.)</th><th>Packet Out of Order Rate (Avg.)</th><th>Jitter (Avg.)</th>
+          <th></th><th>RTP Packet Flow (Avg. packets/s)</th><th>Packet Loss Rate (Avg. %)</th><th>Packet Out of Order Rate (Avg. %)</th><th>Jitter (Avg.)</th>
         </tr>
         <tr>
           <td></td><td>{{visualizationdata[key].averages.rtp_rate}}</td><td>{{visualizationdata[key].averages.rtp_loss_rate}}</td><td>{{visualizationdata[key].averages.rtp_ooo_rate}}</td><td>{{visualizationdata[key].averages.rtp_jitter}}</td>
