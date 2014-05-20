@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('mean.controllers.login', [])
-    .controller('LoginCtrl', ['$scope','$rootScope','$http','$location', function($scope, $rootScope, $http, $location) {
+    .controller('LoginCtrl', ['$scope','$rootScope','$http','$location', '$window', function($scope, $rootScope, $http, $location, $window) {
         // This object will be filled by the form
         $scope.user = {};
 
@@ -16,6 +16,7 @@ angular.module('mean.controllers.login', [])
                     $scope.loginError = 0;
                     $rootScope.user = user;
                     $rootScope.$emit('loggedin');
+                    $window.user = $rootScope.user;
                     $location.url('/');
                 })
                 .error(function() {

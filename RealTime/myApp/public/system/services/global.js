@@ -1,13 +1,22 @@
 'use strict';
 
 //Global service for global variables
-angular.module('mean.system').factory('Global', [
-    function() {
-        var _this = this;
-        _this._data = {
-            user: window.user,
-            authenticated: !! window.user
-        };
-        return _this._data;
+angular.module('mean.system').service('Global', ['$rootScope', 
+    function($rootScope) {
+    	console.log($rootScope);
+    	var data = {
+    		blah: 'blah',
+    		user: $rootScope.user,
+    		authenticated: !! $rootScope.user
+    	}
+
+    	$rootScope.$on('loggedin', function() {
+    		data.user = $rootScope.user;
+    		data.authenticated = !! $rootScope.user;
+    	});
+
+	    return data;
     }
+
+
 ]);

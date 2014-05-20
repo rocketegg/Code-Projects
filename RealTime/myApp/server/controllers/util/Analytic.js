@@ -74,8 +74,8 @@ function computeMOS (averages, codec) {
 	function getIeEff(averages, codec) {
 		//IeEff = Ie + (95 - Ie) * Ppl / (Ppl / BurstR + Bpl)
 		var Ppl = (averages.rtp_loss_total + averages.rtp_ooo_total) / averages.rtp_packet_total * 100;
-		var Bpl = rfactor_constants.codec[codec].bpl;
-		var Ie = rfactor_constants.codec[codec].ie;
+		var Bpl = rfactor_constants.codec[codec] ? rfactor_constants.codec[codec].bpl : undefined;
+		var Ie = rfactor_constants.codec[codec] ? rfactor_constants.codec[codec].ie : undefined;
 
 		if (!Ppl) {
 			Ppl = 0;

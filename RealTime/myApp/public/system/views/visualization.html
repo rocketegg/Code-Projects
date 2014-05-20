@@ -32,7 +32,7 @@
           <th></th><th>RTP Packet Flow (Avg. packets/s)</th><th>Packet Loss Rate (Avg. %)</th><th>Packet Out of Order Rate (Avg. %)</th><th>Jitter (Avg.)</th>
         </tr>
         <tr>
-          <td></td><td>{{visualizationdata[key].averages.rtp_rate}}</td><td>{{visualizationdata[key].averages.rtp_loss_rate}}</td><td>{{visualizationdata[key].averages.rtp_ooo_rate}}</td><td>{{visualizationdata[key].averages.rtp_jitter}}</td>
+          <td></td><td>{{visualizationdata[key].averages.rtp_rate}}</td><td>{{visualizationdata[key].averages.rtp_loss_rate * 100}}</td><td>{{visualizationdata[key].averages.rtp_ooo_rate * 100}}</td><td>{{visualizationdata[key].averages.rtp_jitter}}</td>
         </tr>
       </table>
     </div>

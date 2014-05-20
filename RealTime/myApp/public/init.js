@@ -21,4 +21,27 @@ var modules = ['ngCookies', 'ngResource', 'ui.bootstrap', 'ui.router', 'mean.sys
 modules = modules.concat(packageModules);
 
 // Combined modules
-angular.module('mean', modules);
+angular.module('mean', modules)
+
+.run(function ($rootScope, $state, Global, $http) {
+	$rootScope.$on("$stateChangeStart", function(event, toState, toParams, fromState, fromParams){
+		$http.get('/loggedin').success(function(user) {
+            // Authenticated
+            if (user !== '0') {
+            	//console.log("User is logged in, setting global var");
+            	$rootScope.user = user;
+            	$rootScope.$emit('loggedin');
+                //$timeout(deferred.resolve, 0);
+            }
+
+            // Not Authenticated
+            else {
+                $timeout(function() {
+                    //deferred.reject();
+                    $location.url('/login');
+                }, 0);
+                
+            }
+        });
+	});
+});
