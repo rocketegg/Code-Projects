@@ -21,10 +21,20 @@
     </div>
   </div>
 
-  <div class="row" ng-repeat="(key, value) in chartObjects">
-    <div class="col-sm-12 well">
-      <div google-chart chart="value"></div>
-      <table class="table table-condensed table-bordered table-hover normal white">
+  <div class="well" ng-repeat="(key, value) in chartObjects">  
+  <div class="row">
+    <div class="col-sm-6">
+      <div google-chart chart="value" class="bordered"></div>
+
+    </div>
+
+    <div class="col-sm-6">
+      <div google-chart chart="chartAverages[key]" class="bordered"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-12 paddedtopten">
+          <table class="table table-condensed table-bordered table-hover normal white">
         <tr><td></td>
           <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{visualizationdata[key].averages.duration}} ms</td><td><span class="bold red">CODEC:</span> {{visualizationdata[key].metadata.codec}}</td><td><span class="bold red">Computed MOS:</span> {{visualizationdata[key].averages.mos.MOS}}</td>
         </tr>
@@ -35,6 +45,14 @@
           <td></td><td>{{visualizationdata[key].averages.rtp_rate}}</td><td>{{visualizationdata[key].averages.rtp_loss_rate * 100}}</td><td>{{visualizationdata[key].averages.rtp_ooo_rate * 100}}</td><td>{{visualizationdata[key].averages.rtp_jitter}}</td>
         </tr>
       </table>
+
+      <div ng-if="visualizationdata[key].averages.mos.MOS > 4"><h3>Status: <span class="glyphicon glyphicon-ok green spacer"></span>
+      </div>
+      <div ng-if="visualizationdata[key].averages.mos.MOS > 3.8 && visualizationdata[key].averages.mos.MOS <= 4"><h3>Status: <span class="glyphicon glyphicon-ok yellow spacer"></span>
+      </div>
+      <div ng-if="visualizationdata[key].averages.mos.MOS <= 3.8"><h3>Status: <span class="glyphicon glyphicon-ok red spacer"></span>
+      </div>
+      </div>
     </div>
   </div>
 

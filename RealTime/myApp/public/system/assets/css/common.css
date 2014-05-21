@@ -79,3 +79,19 @@ span.spacer {
 .red {
   color:red;
 }
+
+.bordered {
+  border: 1px solid #ddd;
+}
+
+.paddedtopten {
+  padding-top:10px;
+}
+
+.green {
+  color:green;
+}
+
+.yellow {
+  color:yellow;
+}

@@ -1,0 +1,14 @@
+[{
+  "name"        : "main server",
+  "script"      : "server.js",
+  "args"        : "['']",
+  "instances"   : "1",
+  "exec_mode"   : "cluster",
+  "ignoreWatch" : ["[\\/\\\\]\\./", "node_modules", "public/system/lib"],
+  "watch"       : "true",
+  "cwd"         : "",
+  "env": {
+      "NODE_ENV": "production",
+      "AWESOME_SERVICE_API_TOKEN": "xxx"
+  }
+}]

@@ -2,11 +2,21 @@
 
 module.exports = function(grunt) {
     require('time-grunt')(grunt);
+    grunt.loadNpmTasks('grunt-forever');
 
     // Project Configuration
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         assets: grunt.file.readJSON('server/config/assets.json'),
+        forever: {
+            server1: {
+                options: {
+                    index: 'server.js',
+                    logDir: 'logs',
+                    command: 'NODE_ENV=production grunt'
+                }
+            }
+        },
         watch: {
             js: {
                 files: ['gruntfile.js', 'server.js', 'server/**/*.js', 'public/js/**', 'test/**/*.js'],
@@ -107,7 +117,7 @@ module.exports = function(grunt) {
 
     //Default task(s).
     if (process.env.NODE_ENV === 'production') {
-        grunt.registerTask('default', ['jshint', 'csslint', 'cssmin', 'uglify', 'concurrent']);
+        grunt.registerTask('default', ['cssmin', 'uglify', 'concurrent']);
     } else {
         grunt.registerTask('default', ['jshint', 'csslint', 'concurrent']);
     }
