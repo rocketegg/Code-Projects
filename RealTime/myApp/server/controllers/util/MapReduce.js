@@ -173,7 +173,7 @@ var MapReduce = function () {
         //  Extension: blah
         //}
         reduce: function(device, metricKey, startTime, endTime, cb) {
-          console.log('[MapReduce]: Running Map Reduce @ ' + new Date());
+          console.log('[MapReduce]: Running *REDUCE* Map Reduce @ ' + new Date());
           var IPs = splitIPs(device.IP_ADDRESS ? device.IP_ADDRESS : "");
 
           var reducer = new MapReduceAggregator();
@@ -204,6 +204,13 @@ var MapReduce = function () {
 
           }
 
+        },
+
+        //Computes performance metrics for a device within a certain end time and start time
+        //For comparison purposes
+        qos: function(device, startTime, endTime, cb) {
+          //not sure if this is possible from MR
+          console.log('[MapReduce]: Running *QOS* Map Reduce @ ' + new Date());
         }
     };
 };

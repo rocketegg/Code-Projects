@@ -1,7 +1,6 @@
 //Author: Al Ho 2/22/2014
 'use strict';
-var util = require('util'),
-    fs = require('fs'),
+var fs = require('fs'),
     mongoose = require('mongoose');
 
 var decoders = {
@@ -37,7 +36,7 @@ function decode (msg, rinfo, filename) {
 
     try {
         var timestamp = new Date().getTime();
-        console.log("[DECODE]: Decoding udp message with timestamp: %s", timestamp);
+        console.log('[DECODE]: Decoding udp message with timestamp: %s', timestamp);
         //UNCOMMENT THIS TO WRITE SOME PACKETS TO THE packets dir
         //writeToFile(msg, filename);
         var decoded = [];   //This code currently runs synchronously, pushing each decoded packet on the array, which is returned
@@ -78,7 +77,8 @@ function decode_packets(msg, rinfo, offset, timestamp, decoded) {
                         console.log('\tDone inserting ' + packet._id + ' into mongodb.');
                     });
 
-                    if (packet.type === 204 && packet.data.subtype === 5 || packet.data.subtype === 4)    //only print sender/receiver reports
+                    //if (packet.type === 204 && packet.data.subtype === 5 || packet.data.subtype === 4)    //only print sender/receiver reports
+                    if (packet.type === 203)
                         console.log(JSON.stringify(packet, undefined, 2));
 
                     //TODO: can make this run asynchronously
@@ -87,7 +87,7 @@ function decode_packets(msg, rinfo, offset, timestamp, decoded) {
                     console.log('\tError: Packet could not be decoded. ');
                 }
             } catch (err) {
-                console.log("Error decoding packet: " + err);
+                console.log('Error decoding packet: ' + err);
                 console.log(packet.data);
                 //UNCOMMENT THIS LINE TO BREAK THE DECODER UPON A FAILED DECODING
                 //throw err;
@@ -221,6 +221,27 @@ function decode_202(msg, offset) {
 //Decode Bye Description type packet
 function decode_203(msg, offset) {
     console.log('[DECODER] - Found 203 - Goodbye');
+    var data = {};
+    data.length = msg.readUInt16BE(offset + 2);
+    data.src_count = msg.readUInt8(offset) & 31;
+    data.ssrc = [];
+    for (var i = 0; i < data.src_count; i++) {
+        var ssrc_offset = offset + (4 * (i + 1));
+        data.ssrc.push(msg.readUInt32BE(ssrc_offset));
+    }
+    console.log(data);
+    //extra optional reason included
+    if (data.length > data.src_count) {
+        var len_start = offset + 4 + (data.src_count * 4);
+        console.log('len start: ' + len_start);
+        var reason_length = msg.readUInt8(len_start);
+        console.log('reason length: ' + reason_length);
+        data.bye_reason = msg.toString('utf8', len_start + 1, len_start + 1 + reason_length);
+    } else {
+        data.bye_reason = '';
+    }
+
+    return data;
 }
 
 //Decode App type packet - This is Avaya Specific
@@ -378,7 +399,7 @@ var avaya_bit_map = {
         size: 2,
         bit_mask: 23
     }
-}
+};
 
 //try to read IPv4 Traceroute Information
 var avaya_subtype_5 = {
@@ -427,7 +448,7 @@ var avaya_subtype_5 = {
         size: 1,
         bit_mask: 10
     }
-}
+};
 
 /*
 * NOTE: avaya metric mask is determinative of the values to go through
@@ -446,12 +467,13 @@ function decode_204(msg, offset) {
 
     data.ssrc = msg.readUInt32BE(offset + 4);
     data.name = msg.toString('ascii', offset + 8, offset + 12);
+    var ptr;
 
     //Only try to decode App specific packets with a known name
     if (data.name === '-AV-' && data.subtype === 4) {
         data.ssrc_inc_rtp_stream = msg.readUInt32BE(offset + 12);
         data.metric_mask = msg.readUInt32BE(offset + 16);
-        var ptr = offset + 20;   //start at first value
+        ptr = offset + 20;   //start at first value
         for (var key in avaya_bit_map) {
             if (getEnabled(data.metric_mask, avaya_bit_map[key].bit_mask)) {
                 //console.log('%s is enabled', key);
@@ -475,7 +497,7 @@ function decode_204(msg, offset) {
             avaya: {}
         };
 
-        var ptr = offset + 20;
+        ptr = offset + 20;
         //Compute routing information
         for (var key in avaya_subtype_5) {
             if (getEnabled(data.metric_mask, avaya_subtype_5[key].bit_mask)) {
@@ -493,8 +515,8 @@ function decode_204(msg, offset) {
                     data.routing.avaya[key] = msg.readUInt32BE(ptr);
                     ptr += avaya_subtype_5[key].size;
                 } else if (avaya_subtype_5[key].size === 6 && key == 'MID_TRACE_ROUTE_PERHOP') {
-                    if (getEnabled(data.metric_mask, avaya_subtype_5['MID_TRACE_ROUTE_HOPCOUNT'].bit_mask)) {
-                        data.routing.avaya['MID_TRACE_ROUTE_PERHOP'] = [];
+                    if (getEnabled(data.metric_mask, avaya_subtype_5.MID_TRACE_ROUTE_HOPCOUNT.bit_mask)) {
+                        data.routing.avaya.MID_TRACE_ROUTE_PERHOP = [];
                         for (var i = 0; i < data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT; i++) {
                             var hopInfo = {};
                             hopInfo.hop = i;
@@ -510,46 +532,6 @@ function decode_204(msg, offset) {
                 }
             }
         }
-
-        /*if (getEnabled(data.metric_mask, avaya_subtype_5.MID_TRACE_ROUTE_HOPCOUNT.bit_mask) &&
-            data.length > 5) {
-            data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT = msg.readUInt8(offset + 24);
-            console.log("getting hop count: %s", data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT );
-            console.log(data);
-            //Decode Hops
-            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_TRACE_ROUTE_PERHOP.bit_mask)) {
-                data.routing.avaya.MID_TRACE_ROUTE_PERHOP = [];
-                for (var i = 0; i < data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT; i++) {
-                    var hopInfo = {};
-                    hopInfo.hop = i;
-                    hopInfo.IP_ADDRESS = getIPv4Address(msg.readUInt32BE(offset + 25 + 6 * i));
-                    hopInfo.RTT_of_hop = msg.readUInt16BE(offset + 25 + 6 * i + 4);
-                    data.routing.avaya.MID_TRACE_ROUTE_PERHOP.push(hopInfo);
-                }
-            }
-
-            var hopcountoffset = offset + 24 + 6 * data.routing.avaya.MID_TRACE_ROUTE_HOPCOUNT + 1;
-            //RTP SRC PORT
-            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_OUT_RTP_SRC_PORT.bit_mask)) {
-                data.routing.avaya.MID_OUT_RTP_SRC_PORT = msg.readUInt16BE(hopcountoffset);
-            }
-
-            //RTP DEST PORT
-            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_OUT_RTP_DEST_PORT.bit_mask)) {
-                data.routing.avaya.MID_OUT_RTP_DEST_PORT = msg.readUInt16BE(hopcountoffset + 2);
-            }
-
-            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_GATEWAY_ADDR.bit_mask)) {
-                data.routing.avaya.MID_GATEWAY_ADDR = msg.readUInt32BE(hopcountoffset + 4);
-            }
-
-            //RTP DEST PORT
-            if (getEnabled(data.metric_mask, avaya_subtype_5.MID_SUBNET_MASK.bit_mask)) {
-                data.routing.avaya.MID_SUBNET_MASK = msg.readUInt16BE(hopcountoffset + 8);
-            }
-           
-        }
-        */
 
     } else {
         console.log('\tIgnoring 204 packet with name: [%s] and subtype [%d].  Don\'t know how to decode!', data.name, data.subtype);
@@ -574,7 +556,7 @@ function getIPv4Address(int32) {
 }
 
 function findNextWord(octet) {
-    if (octet % 4 == 0) {
+    if (octet % 4 === 0) {
         return octet;
     } else {
         return Math.floor(octet / 4) * 4 + 4;

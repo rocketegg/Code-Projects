@@ -3,13 +3,16 @@
 //Responsible for aggregating data within last time slice
 //Author: Al Ho 2/22/2014
 'use strict';
-var DecoderCache = require('./DecoderCache.js');
+var DecoderCache = require('./DecoderCache.js'),
+	MapReduce = require('./MapReduce.js'),
+	mongoose = require('mongoose');
 
 //given a packet (from mongo, compute MOS score)
 //This takes the decoder cache and computes based on those values
 function computeMetrics(packetArray) {
 	var metric = {};
 	metric.intervals = [];
+	metric.averages = {};
 	var prev, curr;
 
 	//compute intervals
@@ -68,6 +71,10 @@ function computeMetrics(packetArray) {
 	return metric;
 }
 
+function computeStdDevs (averages) {
+
+}
+
 //Computes MOS Score for a device
 //Based on the E-Model, takes the metrics output as input
 function computeMOS (averages, codec) {
@@ -80,7 +87,8 @@ function computeMOS (averages, codec) {
 		if (!Ppl) {
 			Ppl = 0;
 		}
-		if (!Bpl || !Ie) {
+		if (Bpl == undefined || Ie == undefined) {
+			console.log("Bpl: " + Bpl + "   ie: " + Ie)
 			return 0;
 		}
 		var BurstR = 1;	//shark only considers BurstR = 1 (random), but it can be > 1 when packet loss is bursty rather than random
@@ -226,6 +234,44 @@ var Analytic = function () {
         	var mos = computeMOS(filtered);
         	if (cb)
         		cb(mos);
+        },
+
+        //Compute Metrics for a moving window
+        computeWindow: function (deviceIP, startTime, endTime, cb) {
+        	console.log(deviceIP + " " + startTime + " " + endTime);
+        	var Packet = mongoose.model('Packet');
+			// var query = { 
+		 //        $and: [{ 
+		 //          'device.IP_ADDRESS': deviceIP
+		 //        }, {
+		 //          'metadata.TYPE': 204
+		 //        },{
+		 //          'data.subtype': 4
+		 //        },{
+		 //          'timestamp': { 
+		 //          	$gte: new Date(startTime), 
+		 //          	$lte: new Date(endTime) 
+		 //          }
+		 //        }]
+		 //      };
+        	Packet.sliceByIP(deviceIP, startTime, endTime, function(err, packets) {
+        		console.log('[ANALYTIC] compute window has %d packets.', packets.length);
+				var metrics = computeMetrics(packets);
+	        	if (cb)
+	        		cb(err, metrics);
+        	});
+        },
+
+        //computes metrics for a call, assuming that packet array is already received
+        computeCall: function(packetArray, cb) {
+        	try {
+        		var metrics = computeMetrics(packetArray);
+        		cb(null, metrics);
+        	} catch (err) {
+        		if (cb) {
+        			cb(err, {});
+        		}
+        	}
         }
     };
 };

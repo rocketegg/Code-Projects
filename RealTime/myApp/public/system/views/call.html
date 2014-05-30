@@ -1,46 +1,33 @@
-<section data-ng-controller="VisualizationController">
+<section data-ng-controller="CallController" data-ng-init="init()">
   <div class="row">
     <div class="col-sm-12">
-      <form class="form-horizontal">
-        <fieldset>
-         <legend>Device Visualization</legend>
-            <div class="form-group">
-              <label class="col-lg-2 control-label">IP Monitoring (comma separated)</label>
-              <div class="col-lg-10">
-                <input ng-model="options.IP_ADDRESS" class="form-control"/>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="col-lg-2 control-label">Active Call Detection</label>
-              <div class="col-lg-10">
-                <table class="table table-condensed table-bordered table-hover table-striped">
-                  <tr>
-                    <th>Caller</th>
-                    <th>Callee</th>
-                    <th>Duration</th>
-                    <th class="center">Visualize</th>
-                  </tr>
-                  <tr ng-repeat="call in calls">
-                    <td>
-                      <a href="" ng-click="addIP(call.from.IP_ADDRESS)" ng-show="!containsIP(call.from.IP_ADDRESS)"><span class="glyphicon glyphicon-plus spacer" ></span></a>
-                      <a href="" ng-click="removeIP(call.from.IP_ADDRESS)" ng-show="containsIP(call.from.IP_ADDRESS)"><span class="glyphicon glyphicon-minus spacer red" ></span></a> {{call.from.IP_ADDRESS}} </td>
-                    <td>
-                      <a href="" ng-click="addIP(call.to.IP_ADDRESS)" ng-show="!containsIP(call.to.IP_ADDRESS)"><span class="glyphicon glyphicon-plus spacer" ></span></a>
-                      <a href="" ng-click="removeIP(call.to.IP_ADDRESS)" ng-show="containsIP(call.to.IP_ADDRESS)"><span class="glyphicon glyphicon-minus spacer red" ></span></a> {{call.to.IP_ADDRESS.length > 0 ? call.to.IP_ADDRESS : call.to.SSRC + " (IP undiscovered)"}}</td>
-                    <td>{{call.duration}}</td>
-                    <td class="center"><a href="#!/visualization/call/{{call._id}}"><span class="glyphicon glyphicon-chevron-right"></span></a></td>
-                  </tr>
-                </table>
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="col-lg-10 col-lg-offset-2">
-                <button type="submit" ng-click="togglePolling()" class="btn btn-info btn-sm" ng-show="!isPolling">Visualize</button>
-                <button type="submit" ng-click="togglePolling()" class="btn btn-danger btn-sm" ng-show="isPolling">Stop</button>
-              </div>
-            </div>
-        </fieldset>
-      </form>
+      <legend>Call Visualization</legend>
+      <table class="table table-condensed table-bordered table-hover table-striped">
+        <tr>
+          <th>Caller</th>
+          <th>Callee</th>
+          <th>Duration</th>
+          <th>Active</th>
+          <th class="center">Refresh</th>
+        </tr>
+        <tr>
+          <td>{{call.from.IP_ADDRESS}} </td>
+          <td>{{call.to.IP_ADDRESS.length > 0 ? call.to.IP_ADDRESS : call.to.SSRC + " (IP undiscovered)"}}</td>
+          <td>{{call.duration}}</td>
+          <td>{{call.metadata.ended.from === false || call.metadata.ended.to == false}}</td>
+          <td class="center"><a href="" ng-click="refresh()"><span class="glyphicon glyphicon-refresh"></span></a></td>
+        </tr>
+        <tr>
+          <td><span class="bold">SSRC:</span> {{call.from.SSRC}} </td>
+          <td><span class="bold">SSRC:</span> {{call.to.SSRC}} </td>
+          <td><span class="bold">Last Update:</span> {{call.metadata.lastUpdated | date:'short'}} </td>
+          <td>
+            <span class="bold">Caller End:</span> {{!call.metadata.ended.from ? 'False' : 'True (' + call.metadata.ended.from_reason + ')'}} <br/> 
+            <span class="bold">Callee End:</span> {{!call.metadata.ended.to ? 'False' : 'True (' + call.metadata.ended.to_reason + ')'}}
+          </td>
+          <td class="center"></td>
+        </tr>
+      </table>
     </div>
   </div>
 
@@ -61,11 +48,8 @@
       </div>
     </div>
     <div class="row">
-      <div class="col-sm-6">
+      <div class="col-sm-12">
         <div google-chart chart="value" class="bordered"></div>
-      </div>
-      <div class="col-sm-6">
-        <div google-chart chart="chartAverages[key]" class="bordered"></div>
       </div>
     </div>
     <div class="row">
@@ -74,7 +58,7 @@
           <table class="table table-condensed table-bordered table-hover normal white">
             <tr>
               <td></td>
-              <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{visualizationdata[key].averages.duration}} ms</td><td><span class="bold red">CODEC:</span> {{visualizationdata[key].metadata.codec}}</td><td><span class="bold red">Computed MOS:</span> {{visualizationdata[key].averages.mos.MOS}}</td>
+              <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{convertMStoHMS(visualizationdata[key].averages.duration)}}</td><td><span class="bold red">CODEC:</span> {{visualizationdata[key].metadata.codec}}</td><td><span class="bold red">Computed MOS:</span> {{visualizationdata[key].averages.mos.MOS}}</td>
             </tr>
             <tr>
               <th></th>

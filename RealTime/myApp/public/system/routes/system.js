@@ -16,6 +16,10 @@ angular.module('mean.system').config(['$stateProvider', '$urlRouterProvider',
                     url: '/device',
                     templateUrl: 'public/system/views/devices.html'
                 })
+                .state('call visualization', {
+                    url: '/visualization/call/:callId',
+                    templateUrl: 'public/system/views/call.html'
+                })
                 .state('device visualization', {
                     url: '/visualization',
                     templateUrl: 'public/system/views/visualization.html'

@@ -1,8 +1,8 @@
 'use strict';
 
-angular.module('mean.system').controller('VisualizationController', 
+angular.module('mean.system').controller('CallController', 
 
-	['$scope', 'Global', '$http', '$timeout', function ($scope, Global, $http, $timeout) {
+	['$scope', 'Global', '$http', '$timeout', '$stateParams', function ($scope, Global, $http, $timeout, $stateParams) {
 
     $scope.global = Global;
     $scope.options = {
@@ -30,7 +30,7 @@ angular.module('mean.system').controller('VisualizationController',
     		$scope.isPolling = false;
     	} else {
     		startPolling();
-            $scope.chartObjects = {};
+        $scope.chartObjects = {};
     		$scope.isPolling = true;
     	}   	
     };
@@ -41,35 +41,10 @@ angular.module('mean.system').controller('VisualizationController',
 
     $scope.poll = function() {
 		//check status of cron job
-    	$http({
-    		method: 'GET',
-    		url: '/analytics/window',
-            params: {IP_ADDRESS: $scope.options.IP_ADDRESS}
-    	}).success(function(data, status, headers, config) {
-    		$scope.visualizationdata = data.active_devices;
-        processCharts(data.active_devices);
 
-
-    	}).error(function(data, status, headers, config) {
-    		console.log('error');
-    	});
-
-      $http({
-        method: 'GET',
-        url: '/calls/active'
-      }).success(function(data, status, headers, config) {
-        for (var i = 0; i < data.length; i++) {
-          var duration = new Date(data[i].endTime).getTime() - new Date(data[i].startTime).getTime();
-          data[i].duration = convertMStoHMS(duration);
-        }
-
-        $scope.calls = data;
-      }).error(function(data, status, headers, config) {
-        console.log('error');
-      });
     };
 
-    function convertMStoHMS(duration) {
+    $scope.convertMStoHMS = function(duration) {
       var orig = Math.floor(duration / 1000);
       duration = orig;
       var hours = Math.floor(duration / 3600);
@@ -83,52 +58,30 @@ angular.module('mean.system').controller('VisualizationController',
       return hours_prefix + hours + ':' + minutes_prefix + minutes + ':' + seconds_prefix + seconds;
     }
 
-    $scope.compare = function(key, options) {
-      if (!options)
-        return;
-      var currTime = new Date().getTime();
-      options.endTime = currTime;
-      if (options.window === 'Custom') {
-        options.endTime -= (options.slidervalue.split(';')[0] * 60000);
-        options.startTime = options.endTime - (options.slidervalue.split(';')[1] * 60000);
-      } else if (options.window === 'Last minute') {
-        options.startTime = options.endTime - 60000;
-      } else if (options.window === 'Last 5 minutes') {
-        options.startTime = options.endTime - (60000 * 5);
-      } else if (options.window === 'Last 10 minutes') {
-        options.startTime = options.endTime - (60000 * 10);
-      } else if (options.window === 'Last hour') {
-        options.startTime = options.endTime - (60000 * 60);
-      }
-      console.log(key);
-      console.log(options);
+    //Gets initial call data
+    $scope.init = function() {
       $http({
         method: 'GET',
-        url: '/analytics/qos',
-            params: {device: key, startTime: options.startTime, endTime: options.endTime}
+        url: '/calls/' + $stateParams.callId
       }).success(function(data, status, headers, config) {
-        $scope.viz[key].results = data;
+        $scope.call = data;
+        var duration = new Date(data.endTime).getTime() - new Date(data.startTime).getTime();
+        $scope.call.duration = $scope.convertMStoHMS(duration);
+      }).error(function(data, status, headers, config) {
+        console.log('error');
+      });
+
+      $http({
+        method: 'GET',
+        url: '/calls/' + $stateParams.callId + '/packets'
+      }).success(function(data, status, headers, config) {
+        $scope.visualizationdata = data.active_devices;
+        processCharts(data.active_devices);
       }).error(function(data, status, headers, config) {
         console.log('error');
       });
     };
 
-    $scope.addIP = function (IP_ADDRESS) {
-      if (!$scope.containsIP(IP_ADDRESS)) {
-        $scope.options.IP_ADDRESS += ', ' + IP_ADDRESS;
-      }
-    };
-
-    $scope.removeIP = function (IP_ADDRESS) {
-      if ($scope.containsIP(IP_ADDRESS)) {
-        $scope.options.IP_ADDRESS = $scope.options.IP_ADDRESS.replace(', ' + IP_ADDRESS, '').replace(',' + IP_ADDRESS,'');
-      }
-    };
-
-    $scope.containsIP = function(IP_ADDRESS) {
-      return $scope.options.IP_ADDRESS.indexOf(IP_ADDRESS) > -1;
-    }
-    
     function processCharts (active_devices) {
         for (var key in $scope.chartObjects) {
             if (!active_devices.hasOwnProperty(key)) {  //device no longer being reported
@@ -258,19 +211,6 @@ angular.module('mean.system').controller('VisualizationController',
         }
     }
 
-    // $scope.$watchCollection('viz', function(newvalue, oldvalue) {
-    //   console.log(newvalue);
-    //   updateChartRange(newvalue);
-    // }, true);
-
-    // function updateChartRange(key, newvalue) {
-    //   var to = newvalue.split(';')[0];
-    //   var from = newvalue.split(';')[1];
-    //   $scope.viz[key].options.endTime = new Date().getTime() - (to * 1000 * 60);
-    //   $scope.viz[key].options.startTime = new Date().getTime() - (from * 1000 * 60);
-    // }
-
-    
     function pushRows(chartObject, data, averages) {
         function createChartRow(interval) {
             var date = new Date(interval.timestamp);
@@ -327,32 +267,4 @@ angular.module('mean.system').controller('VisualizationController',
         }
     }
 
-}])
-
-.filter('reverse', function() {
-  return function(items) {
-    return items.slice().reverse();
-  };
-})
-
-.directive('arbor', function() {
-    return{
-        restrict: 'A',
-        scope: {graphData1: '=data'},
-        link: function(scope, elem, attrs) {
-            scope.$watch("graphData1", function(v) {
-                console.log("watching graph data");
-                console.log(v);
-                // Initialise arbor
-                sys.parameters({stiffness:600, repulsion:2000, gravity:false, dt:0.015});
-                sys.renderer = Renderer("#viewport");
-                //sys.graft(v);
-                sys.merge(v);
-                sys.tweenNode("KooKoo", 3, {color:"#0431B4", radius:2})
-                //sys.start();
-
-            });
-        }
-    };
-});
-;
+}]);

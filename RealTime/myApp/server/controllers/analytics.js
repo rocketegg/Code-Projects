@@ -4,11 +4,10 @@
  * Module dependencies.
  */
 var MapReduce = require('./util/MapReduce.js'),
-    DecoderCache = require('./util/DecoderCache.js'),
     Analytic = require('./util/Analytic.js');
 
 exports.reduce = function(req, res) {
-    console.log('[ANALYTICS] Beginning custom MapReduce.');
+    console.log('[ANALYTICS] Beginning MapReduce for high/low/average.');
     console.log(JSON.stringify(req.body));
     var startTime = req.body.startTime;
     var endTime = req.body.endTime;
@@ -34,13 +33,28 @@ exports.reduce = function(req, res) {
     });
 };
 
+exports.qos = function(req, res) {
+    console.log('[ANALYTICS] Beginning QOS computation statistics.');
+    console.log(JSON.stringify(req.query));
+    var startTime = parseInt(req.query.startTime);
+    var endTime = parseInt(req.query.endTime);
+    var device = req.query.device;
+
+    var _analytic = new Analytic();
+    _analytic.computeWindow(device, startTime, endTime, function(err, results) {
+        if (err) throw err;
+        else
+            res.jsonp(results);
+    });
+};
+
 function splitIPs(ip_string) {
   var IPs = ip_string.split(',');
   for (var i = 0; i < IPs.length; i++) {
     IPs[i] = IPs[i].trim();
     //IP Validation
     if (!(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/i.test(IPs[i]))) {
-        console.log("Invalid IP " + IPs[i])
+        console.log('Invalid IP' + IPs[i]);
         IPs.splice(i, 1);
     }
   }

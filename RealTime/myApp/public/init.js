@@ -17,7 +17,7 @@ for (var index in window.modules) {
 };
 
 // Default modules
-var modules = ['ngCookies', 'ngResource', 'ui.bootstrap', 'ui.router', 'mean.system', 'mean.articles', 'mean.auth', 'googlechart', 'ngSanitize', 'ngSlider', 'ui.multiselect'];
+var modules = ['ngCookies', 'ngResource', 'ui.bootstrap', 'ui.router', 'mean.system', 'mean.articles', 'mean.auth', 'mean.notifications', 'googlechart', 'ngSanitize', 'ngSlider', 'ui.multiselect'];
 modules = modules.concat(packageModules);
 
 // Combined modules
@@ -28,8 +28,9 @@ angular.module('mean', modules)
 		$http.get('/loggedin').success(function(user) {
             // Authenticated
             if (user !== '0') {
-            	//console.log("User is logged in, setting global var");
+            	console.log("User is logged in, setting global var");
             	$rootScope.user = user;
+                console.log(user);
             	$rootScope.$emit('loggedin');
                 //$timeout(deferred.resolve, 0);
             }

@@ -393,7 +393,40 @@ PacketSchema.statics = {
         $lt: endTime
       }
     }).exec(cb);
-  }
+  },
+
+  //deviceIP is a string IP
+  //startTime & endTime is a string (unix date in ms) or a date object
+  sliceByIP: function(deviceIP, startTime, endTime, cb) {
+        //makes this function a little more robust
+        if (startTime instanceof Date) {
+            startTime = startTime.getTime();
+        }
+
+        if (endTime instanceof Date) {
+            endTime = endTime.getTime();
+        }
+
+        var query = { 
+            $and: [{ 
+                  'device.IP_ADDRESS': deviceIP
+                }, {
+                  'metadata.TYPE': 204
+                },{
+                  'data.subtype': 4
+                },{
+                  'timestamp': { 
+                    $gte: new Date(startTime), 
+                    $lte: new Date(endTime) 
+                }
+            }]
+          };
+        this.find(query).sort({ _id : 1 }).exec(function(err, packets) {
+            console.log('[PACKET] compute window has %d packets.', packets.length);
+            if (cb)
+                cb(err, packets);
+        });
+    }
 };
 
 mongoose.model('Packet', PacketSchema);

@@ -8,7 +8,9 @@ var mean = require('meanio'),
 	Aggregator = require ('./server/controllers/util/Aggregator.js'),
 	Purger = require ('./server/controllers/util/Purger.js'),
 	CronJob = require('cron').CronJob,
-  DecoderCache = require('./server/controllers/util/DecoderCache.js');
+  DecoderCache = require('./server/controllers/util/DecoderCache.js'),
+  Sensor = require('./server/controllers/util/Sensor.js'),
+  Cache = require('./server/controllers/util/Cache.js');
 
 mean.app('RTCP Collector Prototype',{});
 
@@ -42,6 +44,8 @@ console.log('Express app started on port ' + config.port);
 var server = dgram.createSocket('udp4');
 var _decoder = new decoder();
 var _decoderCache = new DecoderCache(12);
+var _sensor = new Sensor();
+var _callCache = new Cache();
 
 server.on('error', function (err) {
   console.log('server error:\n' + err.stack);
@@ -51,6 +55,17 @@ server.on('error', function (err) {
 server.on('message', function (msg, rinfo) {
   console.log('[LISTENER] Received a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s] of size [%d] bytes.', new Date(), msg.length);
   var decoded = _decoder.decode(msg, rinfo);  //decoded is a bundle of decoded packets that eventually will get saved to mongodb (at some point)
+  _sensor.trackCall(_decoderCache.filterAndStripByType(rinfo.address, 204, 4), decoded,
+      function (err, callStart) {
+        _callCache.setItem(callStart._id, callStart);
+        //console.log(_callCache);
+      },
+
+      function (err, callEnd) {
+        _callCache.clearItem(callEnd._id);
+        //console.log(_callCache);
+      }
+    );
   _decoderCache.pushPackets(rinfo.address, decoded);
 });
 
@@ -88,6 +103,7 @@ var purger = new CronJob({
   //Runs every minute
   onTick: function() {
   	_purger.purge();
+    _purger.expireCalls();
   },
   start: false,
   timeZone: 'America/Los_Angeles'

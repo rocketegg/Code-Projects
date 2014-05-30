@@ -29,6 +29,10 @@ var Cache = function () {
             cache = {};
         },
 
+        clearItem: function(key) {
+            delete cache[key];
+        },
+
         getAll: function() {
             var copy;
             return _.extend(cache, copy);

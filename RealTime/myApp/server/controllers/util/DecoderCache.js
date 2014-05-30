@@ -38,19 +38,19 @@ var DecoderCache = function (size) {
     //private cache
     var cache = new Cache();
     var bufferSize = size ? size : 12;  //approximately 1 minute worth of data
-    console.log("[DECODER CACHE] Initializing cache with buffer size %d", bufferSize);
+    //console.log("[DECODER CACHE] Initializing cache with buffer size %d", bufferSize);
 
     this.pushPackets = function(key, value) {
         if (!cache.hasKey(key)) {
-            console.log("[DECODER CACHE] Initializing new buffer for key %s", key);
+            //console.log("[DECODER CACHE] Initializing new buffer for key %s", key);
             var packetArray = [];
             packetArray.push(value);
             cache.setItem(key, packetArray);
         } else {
-            console.log("[DECODER CACHE] Buffer exists already for key %s, updating.", key);
+            //console.log("[DECODER CACHE] Buffer exists already for key %s, updating.", key);
             var packetArray = cache.getItem(key);
             if (packetArray.length + 1 > bufferSize) {
-                console.log("[DECODER CACHE] Buffer full for key %s, splicing.", key);
+                //console.log("[DECODER CACHE] Buffer full for key %s, splicing.", key);
                 packetArray.splice(0,1);
             }
             packetArray.push(value);
@@ -65,12 +65,12 @@ var DecoderCache = function (size) {
     //for a key, returns an array of packet arrays (decoded) that has a packet type and subtype packet in the udp message
     this.filterByType = function(key, packetType, subType) {
         if (!cache.hasKey(key)) {
-            console.log("[DECODER CACHE] No device found with key %s.", key);
+            //console.log("[DECODER CACHE] No device found with key %s.", key);
             return [];
         } else {
             var arr = _.filter(cache.getItem(key), function(packetBundle) {
                 var bundle = _.filter(packetBundle, function(packet) {
-                    return packet.metadata.TYPE === 204 && packet.data.subtype === 4;
+                    return packet.metadata.TYPE === packetType;
                 });
                 return bundle.length > 0;
             });

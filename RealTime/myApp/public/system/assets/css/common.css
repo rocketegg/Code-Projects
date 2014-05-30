@@ -67,7 +67,7 @@ footer p {
   z-index: 1000;
 }
 
-.table.white {
+.table.white, .well.white {
   background:white;
 }
 
@@ -78,6 +78,10 @@ span.spacer {
 
 .red {
   color:red;
+}
+
+.center {
+  text-align:center;
 }
 
 .bordered {
