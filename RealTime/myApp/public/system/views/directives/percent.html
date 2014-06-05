@@ -1,0 +1,3 @@
+<span ng-if="!bias || bias=='high'" ng-class="{green: getValue() >= 100.0, red: getValue() < 100.0}">({{getValue()}} %)</span>
+<span ng-if="bias=='low'" ng-class="{green: getValue() <= 100.0, red: getValue() > 100.0}">
+({{getValue()}} %)</span>

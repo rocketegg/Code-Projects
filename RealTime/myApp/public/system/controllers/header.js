@@ -18,6 +18,10 @@ angular.module('mean.system').controller('HeaderController', ['$scope', '$rootSc
             'roles': ['authenticated'],
             'title': 'Visualization',
             'link': 'device visualization'
+        },{
+            'roles': ['authenticated'],
+            'title': 'Calls',
+            'link': 'all calls'
         }];
 
         // Query menus added by modules. Only returns menus that user is allowed to see.
@@ -38,7 +42,7 @@ angular.module('mean.system').controller('HeaderController', ['$scope', '$rootSc
 
         $rootScope.$on('loggedin', function() {
 
-            queryMenu('main', defaultMainMenu);
+            //queryMenu('main', defaultMainMenu);
 
             $scope.global = {
                 authenticated: !! $rootScope.user,

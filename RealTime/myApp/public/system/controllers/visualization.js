@@ -16,6 +16,12 @@ angular.module('mean.system').controller('VisualizationController',
     $scope.chartObjects = {};
     $scope.chartAverages = {};
 
+    //Upon transition away, stop polling
+    $scope.$on('$stateChangeStart', function() {
+      console.log('Stopping polling of analytics/window');
+      stopPolling();
+    });
+
     function startPolling() {
     	poller = $timeout(function() {
     		$scope.poll();
@@ -26,18 +32,20 @@ angular.module('mean.system').controller('VisualizationController',
 
     $scope.togglePolling = function() {
     	if ($scope.isPolling) {
-    		$timeout.cancel(poller);	
-    		$scope.isPolling = false;
+    		stopPolling();
     	} else {
     		startPolling();
-            $scope.chartObjects = {};
+        $scope.chartObjects = {};
     		$scope.isPolling = true;
     	}   	
     };
 
-    $scope.stopPolling = function() {
-    	stopPolling();
-    };
+    function stopPolling() {
+    	if ($scope.isPolling) {
+        $timeout.cancel(poller);  
+        $scope.isPolling = false;
+      }
+    }
 
     $scope.poll = function() {
 		//check status of cron job
@@ -83,6 +91,29 @@ angular.module('mean.system').controller('VisualizationController',
       return hours_prefix + hours + ':' + minutes_prefix + minutes + ':' + seconds_prefix + seconds;
     }
 
+    $scope.loadCalls = function(key) {
+      $http({
+        method: 'GET',
+        url: '/calls/device',
+        params: {IP_ADDRESS: key}
+      }).success(function(data, status, headers, config) {
+        $scope.viz[key].calls = data;
+      }).error(function(data, status, headers, config) {
+        console.log('error');
+      });
+    };
+
+    $scope.compareCall = function(key, callId, from) {
+      $http({
+        method: 'GET',
+        url: '/calls/' + callId
+      }).success(function(data, status, headers, config) {
+        $scope.viz[key].results = (from) ? data.metrics.from : data.metrics.to;
+      }).error(function(data, status, headers, config) {
+        console.log('error');
+      });
+    };
+
     $scope.compare = function(key, options) {
       if (!options)
         return;
@@ -100,8 +131,7 @@ angular.module('mean.system').controller('VisualizationController',
       } else if (options.window === 'Last hour') {
         options.startTime = options.endTime - (60000 * 60);
       }
-      console.log(key);
-      console.log(options);
+
       $http({
         method: 'GET',
         url: '/analytics/qos',
@@ -111,6 +141,8 @@ angular.module('mean.system').controller('VisualizationController',
       }).error(function(data, status, headers, config) {
         console.log('error');
       });
+
+
     };
 
     $scope.addIP = function (IP_ADDRESS) {

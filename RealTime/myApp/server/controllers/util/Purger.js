@@ -3,13 +3,16 @@
 'use strict';
 var mongoose = require('mongoose');
 
-var expirationThreshold = 300000;   //5 minutes
+var expirationThreshold = 300000;   //5 min, calls without update for this value will be ended
+var removePacketThreshold = 60 * 60 * 1000;     //1 hour, packets older than this value will be deleted
+var removeCallThreshold = 60 * 60 * 1000 * 24;     //1 day, calls older than this value will be deleted
 
 var Purger = function () {
     return {
-        //Purge up to an hour ago
+
+        //Handles deletes out of DB
         purge: function(cb) {
-            var removeDate = new Date().getTime() - (60 * 60 * 1000);
+            var removeDate = new Date().getTime() - removePacketThreshold;
             //console.log('[PURGER] Purging results @ [%s]', new Date());
             var Packet = mongoose.model('Packet');
 
@@ -19,11 +22,31 @@ var Purger = function () {
                 }
             }, function (err, packets) {
                 if (err) throw err;
+                if (packets.length > 0) {
+                    console.log('\t[PURGER] Removing [%d] packets from Packets collection @ [%s]', packets.length, new Date(removeDate));
+                    packets.forEach(function(packet) {
+                        packet.remove();
+                    });
+                }
+            });
+
+            var callRemoveDate = new Date().getTime() - removeCallThreshold;  //last day
+            var Call = mongoose.model('Call');
+
+            Call.find({
+                startTime: {
+                    $lt: callRemoveDate
+                }
+            }, function (err, calls) {
+                if (err) throw err;
                 
-                //console.log('\t[PURGER] Removing [%d] packets from Packets collection @ [%s]', packets.length, new Date(removeDate));
-                packets.forEach(function(packet) {
-                    packet.remove();
-                });
+                if (calls.length > 0) {
+                    console.log('\t[PURGER] Removing [%d] calls (older than 1 day) from calls collection @ [%s]', calls.length, new Date(callRemoveDate));
+                    calls.forEach(function(call) {
+                        call.remove();
+                    });  
+                }
+
             });
 
             var Reduce = mongoose.model('Reduce');
@@ -34,10 +57,12 @@ var Purger = function () {
             }, function (err, packets) {
                 if (err) throw err;
                 
-                //console.log('\t[PURGER] Removing [%d] packets from Reduce collection @ [%s]', packets.length, new Date(removeDate));
-                packets.forEach(function(packet) {
-                    packet.remove();
-                });
+                if (packets.length > 0) {
+                    console.log('\t[PURGER] Removing [%d] packets from Reduce collection @ [%s]', packets.length, new Date(removeDate));
+                    packets.forEach(function(packet) {
+                        packet.remove();
+                    }); 
+                }
             });
         },
 
@@ -52,6 +77,7 @@ var Purger = function () {
                         console.log('[PURGER]: Call %s timed out.  Marking as inactive.', calls[i]._id);
                         calls[i].metadata.ended.from = true;
                         calls[i].metadata.ended.to = true;
+                        calls[i].endTime = new Date();
                         if (!calls[i].metadata.ended.from_reason || calls[i].metadata.ended.from_reason === '') {
                             calls[i].metadata.ended.from_reason = 'Timed out'
                         }

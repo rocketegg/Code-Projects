@@ -105,13 +105,13 @@ CallSchema.statics = {
     loadAllCallsFromIP: function(deviceIP, cb) {
         this.find({
             'from.IP_ADDRESS': deviceIP
-        }).exec(cb);
+        }).select('-metrics').exec(cb);
     },
 
     loadAllCallsToIP: function(deviceIP, cb) {
         this.find({
             'to.IP_ADDRESS': deviceIP
-        }).exec(cb);
+        }).select('-metrics').exec(cb);
     },
 
     loadActiveCalls: function(cb) {
@@ -122,7 +122,18 @@ CallSchema.statics = {
                 'metadata.ended.to': false
             }]
 
-        }).exec(cb);
+        }).select('-metrics').exec(cb);
+    },
+
+    loadInactiveCalls: function(cb) {
+        this.find({
+            $and: [{
+                'metadata.ended.from': true
+            }, {
+                'metadata.ended.to': true
+            }]
+
+        }).select('-metrics').exec(cb);
     },
 
     endCall: function(IP, SSRC, cb) {
@@ -141,6 +152,7 @@ CallSchema.statics = {
             var callerIP = call.from.IP_ADDRESS;
             var receiverIP = call.to.IP_ADDRESS;
             var Packet = mongoose.model('Packet');
+            console.log('[CALL] Computing packet metrics for caller IP: %s and receiver IP: %s.', callerIP, receiverIP);
 
             async.series([
                 function (callback) {

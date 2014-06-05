@@ -1,0 +1,6 @@
+<a href="#!/visualization/call/{{call._id}}"><span class="glyphicon glyphicon-earphone spacer"></span></a>
+<span ng-class="{'green bold': highlight===call.from.IP_ADDRESS}">{{call.from.IP_ADDRESS}}</span> 
+<span class="glyphicon glyphicon-chevron-right"></span> 
+<span ng-class="{'green bold': highlight===call.to.IP_ADDRESS}">{{call.to.IP_ADDRESS}}</span> 
+
+<span ng-if="call.metadata.ended.to === true && call.metadata.ended.from === true">(Ended)</span><span ng-if="call.metadata.ended.to !== true && call.metadata.ended.from !== true">(Active)</span> 

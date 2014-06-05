@@ -1,0 +1,56 @@
+<section data-ng-controller="CallController" data-ng-init="initAllCalls()">
+  <div class="row">
+    <div class="col-sm-12">
+      <legend>All Calls</legend>
+      <label class="label-control">Active Calls</label>
+      <table class="table table-condensed table-bordered table-hover table-striped">
+        <tr>
+          <th>Caller</th>
+          <th>Callee</th>
+          <th>Duration</th>
+          <th class="center">Visualize</th>
+        </tr>
+        <tr ng-repeat="call in activecalls">
+          <td>
+            <a href="" ng-click="addIP(call.from.IP_ADDRESS)" ng-show="!containsIP(call.from.IP_ADDRESS)"><span class="glyphicon glyphicon-plus spacer" ></span></a>
+            <a href="" ng-click="removeIP(call.from.IP_ADDRESS)" ng-show="containsIP(call.from.IP_ADDRESS)"><span class="glyphicon glyphicon-minus spacer red" ></span></a> {{call.from.IP_ADDRESS}} </td>
+          <td>
+            <a href="" ng-click="addIP(call.to.IP_ADDRESS)" ng-show="!containsIP(call.to.IP_ADDRESS)"><span class="glyphicon glyphicon-plus spacer" ></span></a>
+            <a href="" ng-click="removeIP(call.to.IP_ADDRESS)" ng-show="containsIP(call.to.IP_ADDRESS)"><span class="glyphicon glyphicon-minus spacer red" ></span></a> {{call.to.IP_ADDRESS.length > 0 ? call.to.IP_ADDRESS : call.to.SSRC + " (IP undiscovered)"}}</td>
+          <td>{{call.duration}}</td>
+          <td class="center"><a href="#!/visualization/call/{{call._id}}"><span class="glyphicon glyphicon-chevron-right"></span></a></td>
+        </tr>
+      </table>
+
+      <label class="label-control" style="width:100%">Inactive Calls (Calls older than 1 hour purged)<span class="right"><input type="text" class="form-control" ng-model="searchText" placeholder="Filter by..."/></label>
+      <table class="table table-condensed table-bordered table-hover table-striped">
+        <tr>
+          <th>Caller</th>
+          <th>Callee</th>
+          <th>Duration</th>
+          <th>Active</th>
+          <th class="center">Refresh</th>
+        </tr>
+        <tbody ng-repeat="call in inactivecalls | filter:searchText">
+          <tr>
+            <td>{{call.from.IP_ADDRESS}} </td>
+            <td>{{call.to.IP_ADDRESS.length > 0 ? call.to.IP_ADDRESS : call.to.SSRC + " (IP undiscovered)"}}</td>
+            <td>{{call.duration}}</td>
+            <td>{{call.metadata.ended.from === false || call.metadata.ended.to == false}}</td>
+            <td class="center"><a href="#!/visualization/call/{{call._id}}"><span class="glyphicon glyphicon-chevron-right"></span></a></td>
+          </tr>
+          <tr>
+            <td><span class="bold">SSRC:</span> {{call.from.SSRC}} </td>
+            <td><span class="bold">SSRC:</span> {{call.to.SSRC}} </td>
+            <td><span class="bold">Last Update:</span> {{call.metadata.lastUpdated | date:'short'}} </td>
+            <td>
+              <span class="bold">Caller End:</span> {{!call.metadata.ended.from ? 'False' : 'True (' + call.metadata.ended.from_reason + ')'}} <br/> 
+              <span class="bold">Callee End:</span> {{!call.metadata.ended.to ? 'False' : 'True (' + call.metadata.ended.to_reason + ')'}}
+            </td>
+            <td class="center"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

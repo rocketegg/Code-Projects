@@ -6,6 +6,11 @@ var util = require('util'),
 
 var Filterer = function() {};
 Filterer.prototype.name = 'Filterer';
+
+//This takes all packets since the last run time and rolls them up 
+//into 5 second chunks containing the packet type and other stock RTCP data
+//TODO: we should use mapreduce to do this, then when user makes a query, we mapreduce
+//the again on the output to give averages and totals
 Filterer.prototype.query = function(lastRun, cb) {
   'use strict';
   

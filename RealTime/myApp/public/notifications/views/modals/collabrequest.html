@@ -1,0 +1,14 @@
+<div class="modal-header">
+    <h3 class="modal-title">You have received a CR from {{notification.user}} </h3>
+</div>
+<div class="modal-body">
+	<h4>{{notification.subject}}</h4>
+    <p>{{notification.content}}</p>
+
+    <p>Sent by: {{notification.user}} on {{notification.created | date:'short'}}</p>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-success" ng-click="dismiss(responses.craccept)">Accept</button>
+    <button class="btn btn-danger" ng-click="dismiss(responses.crreject)">Reject</button>
+    <button class="btn btn-warning" ng-click="cancel(notification)">Close</button>
+</div>

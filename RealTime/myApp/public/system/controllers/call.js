@@ -44,6 +44,10 @@ angular.module('mean.system').controller('CallController',
 
     };
 
+    $scope.refresh = function() {
+      $scope.init();
+    };
+
     $scope.convertMStoHMS = function(duration) {
       var orig = Math.floor(duration / 1000);
       duration = orig;
@@ -56,7 +60,38 @@ angular.module('mean.system').controller('CallController',
       var seconds = duration;
       var seconds_prefix = seconds < 10 ? '0' : '';
       return hours_prefix + hours + ':' + minutes_prefix + minutes + ':' + seconds_prefix + seconds;
-    }
+    };
+
+    $scope.initAllCalls = function() {
+      $http({
+        method: 'GET',
+        url: '/calls/active'
+      }).success(function(data, status, headers, config) {
+        for (var i = 0; i < data.length; i++) {
+          var duration = new Date(data[i].endTime).getTime() - new Date(data[i].startTime).getTime();
+          data[i].duration = $scope.convertMStoHMS(duration);
+        }
+
+        $scope.activecalls = data;
+      }).error(function(data, status, headers, config) {
+        console.log('error');
+      });
+
+      $http({
+        method: 'GET',
+        url: '/calls/inactive'
+      }).success(function(data, status, headers, config) {
+        for (var i = 0; i < data.length; i++) {
+          var duration = new Date(data[i].endTime).getTime() - new Date(data[i].startTime).getTime();
+          data[i].duration = $scope.convertMStoHMS(duration);
+        }
+
+        $scope.inactivecalls = data;
+      }).error(function(data, status, headers, config) {
+        console.log('error');
+      });
+    };
+
 
     //Gets initial call data
     $scope.init = function() {

@@ -76,11 +76,19 @@ function computeStdDevs (averages) {
 }
 
 //Computes MOS Score for a device
-//Based on the E-Model, takes the metrics output as input
+//Based on the default E-Model, takes the metrics output as input
+//Parameters:
+//	averages: Averages across an arbitrary # of packets
+//	codec: Codec as determined by RTCP
 function computeMOS (averages, codec) {
-	function getIeEff(averages, codec) {
-		//IeEff = Ie + (95 - Ie) * Ppl / (Ppl / BurstR + Bpl)
+
+	//Corrected: will correct based on corrected E-model which tries to approximate PESQ
+	//In general: IeEff = Ie + (95 - Ie) * Ppl / (Ppl / BurstR + Bpl)
+	function getIeEff(averages, codec, corrected) {
+		
 		var Ppl = (averages.rtp_loss_total + averages.rtp_ooo_total) / averages.rtp_packet_total * 100;
+		Ppl = (corrected === true) ? getCorrectedPPl(Ppl, codec) : Ppl;
+
 		var Bpl = rfactor_constants.codec[codec] ? rfactor_constants.codec[codec].bpl : undefined;
 		var Ie = rfactor_constants.codec[codec] ? rfactor_constants.codec[codec].ie : undefined;
 
@@ -134,13 +142,74 @@ function computeMOS (averages, codec) {
 	var RFactor = R0 - Is - Idd - IeEff;
 	var MOS = convertMOS(RFactor);
 
+	//CORRECTED MOS here
+	var IeEff_corrected = getIeEff(averages, codec, true);
+	var RFactor_corrected = R0 - Is - Idd - IeEff_corrected;
+	var MOS_corrected = convertMOS(RFactor_corrected);
+
 	return {
 		R0: R0,
 		Is: Is,
 		Idd: Idd,
 		IeEff: IeEff,
 		RFactor: RFactor,
-		MOS: MOS
+		MOS: MOS,
+		MOS_corrected: MOS_corrected
+	}
+}
+
+// Computes MOS score based on PESQ correction function to take into account codec tandeming and other factors
+// Based on paper: E-model MOdification for Case of Cascade Codecs Arrangement
+// Essentially the correction function bases PESQ's intrusive approach as truth and tries to adjust
+// E-model PPL to approximate PESQ values (which were discovered empirically)
+var correction_coefficients = {
+	'G711a': {
+		a: 0.34,
+		b: 0.019,
+		c: 5,
+		d: 0.5,
+		e: -0.14
+	},
+	'G711u': {
+		a: 0.31,
+		b: 0.038,
+		c: 5,
+		d: 0.98,
+		e: 0
+	}, 
+	'G729': {
+		a: 0.07,
+		b: 0,
+		c: 0,
+		d: 0,
+		e: -0.0035
+	},
+	'G726': {
+		a: -0.06,
+		b: 0.0033,
+		c: 6,
+		d: 0.09,
+		e: 0.015
+	}, 
+	'G723': {
+		a: 0.01,
+		b: 0.0115,
+		c: 5,
+		d: 0.315,
+		e: 0.009
+	}
+};
+
+function getCorrectedPPl(ppl, codec) {
+	if (!correction_coefficients[codec]) {
+		return ppl;
+	} else {
+		var MOSppl = 4.07378 + (0.17635 * ppl) + (0.00380 * ppl * ppl);	
+		var a = correction_coefficients[codec].a;
+		var b = correction_coefficients[codec].b * Math.pow((ppl - correction_coefficients[codec].c), 2) - correction_coefficients[codec].d;
+		var c = ppl * correction_coefficients[codec].e;
+		var MOSppl_ = MOSppl - (a + b + c);
+		return MOSppl_;
 	}
 }
 
@@ -166,7 +235,7 @@ var rfactor_constants = {
 	codec: {
 		'G711u': {	//also, aka PCMU (G.711 mu-law)
 			ie: 0,
-			bpl: 10
+			bpl: 25
 		},
 		'GSM': {	//how do these map onto RTP Payload type
 			ie: 20,
@@ -187,6 +256,9 @@ var rfactor_constants = {
 		'G729': {
 			ie: 11,
 			bpl: 19
+		},
+		'G726': {
+
 		},
 		'UNKNOWN': {
 			ie: 0,
@@ -211,7 +283,7 @@ var avaya_constants = {
 		133: 'ModemRelay',
 		134: 'ModemPassThru',
 		135: 'ClearChannel',
-		139: 'G.726',
+		139: 'G726',
 		255: 'unspecified'
 	}
 };
@@ -268,6 +340,7 @@ var Analytic = function () {
         		var metrics = computeMetrics(packetArray);
         		cb(null, metrics);
         	} catch (err) {
+        		console.log(err);
         		if (cb) {
         			cb(err, {});
         		}

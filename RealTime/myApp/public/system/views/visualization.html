@@ -74,7 +74,12 @@
           <table class="table table-condensed table-bordered table-hover normal white">
             <tr>
               <td></td>
-              <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{visualizationdata[key].averages.duration}} ms</td><td><span class="bold red">CODEC:</span> {{visualizationdata[key].metadata.codec}}</td><td><span class="bold red">Computed MOS:</span> {{visualizationdata[key].averages.mos.MOS}}</td>
+              <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{visualizationdata[key].averages.duration}} ms</td><td><span class="bold red">CODEC:</span> {{visualizationdata[key].metadata.codec}}</td><td>
+              <span class="bold red">
+              Computed MOS:</span> {{visualizationdata[key].averages.mos.MOS}} <a-percent ng-if="viz[key].results.averages.mos.MOS" numerator="visualizationdata[key].averages.mos.MOS" denominator="viz[key].results.averages.mos.MOS"></a-percent><br/>
+              <span class="bold red">
+              Corrected MOS:</span> {{visualizationdata[key].averages.mos.MOS_corrected}} <a-percent ng-if="viz[key].results.averages.mos.MOS_corrected" numerator="visualizationdata[key].averages.mos.MOS_corrected" denominator="viz[key].results.averages.mos.MOS_corrected"></a-percent>
+              </td>
             </tr>
             <tr>
               <th></th>
@@ -84,44 +89,85 @@
               <th>Jitter (Avg.)</th>
             </tr>
             <tr>
-              <td></td><td>{{visualizationdata[key].averages.rtp_rate}}</td><td>{{visualizationdata[key].averages.rtp_loss_rate * 100}}</td><td>{{visualizationdata[key].averages.rtp_ooo_rate * 100}}</td><td>{{visualizationdata[key].averages.rtp_jitter}}</td>
+              <td></td>
+              <td>{{visualizationdata[key].averages.rtp_rate}} <a-percent ng-if="viz[key].results.averages.rtp_rate" numerator="visualizationdata[key].averages.rtp_rate" denominator="viz[key].results.averages.rtp_rate" bias="'low'"></a-percent></td>
+              <td>{{visualizationdata[key].averages.rtp_loss_rate * 100}} <a-percent ng-if="viz[key].results.averages.rtp_loss_rate" numerator="visualizationdata[key].averages.rtp_loss_rate" denominator="viz[key].results.averages.rtp_loss_rate" bias="'low'"></a-percent></td>
+              <td>{{visualizationdata[key].averages.rtp_ooo_rate * 100}} <a-percent ng-if="viz[key].results.averages.rtp_ooo_rate" numerator="visualizationdata[key].averages.rtp_ooo_rate" denominator="viz[key].results.averages.rtp_ooo_rate" bias="'low'"></a-percent></td>
+              <td>{{visualizationdata[key].averages.rtp_jitter}} <a-percent ng-if="viz[key].results.averages.rtp_jitter" numerator="visualizationdata[key].averages.rtp_jitter" denominator="viz[key].results.averages.rtp_jitter" bias="'low'"></a-percent></td>
             </tr>
         </table>
       </div>
     </div>
     <div class="row">
       <div class="col-sm-12">
-          <h4>Comparison <input type="checkbox" ng-model="enableComparison" class="input-control"/></h4>
+          <h4>Comparison <input type="checkbox" ng-model="enableComparison" class="input-control" ng-click="loadCalls(key)"/></h4>
 
-          <div class="well white" style:"padding-bottom: 60px;" ng-show="enableComparison">
-          <form class="form-inline" role="form">
-            <div class="form-group">
-              <label class="sr-only" for="exampleInputEmail2">Window</label>
-              <select class="form-control" ng-model="viz[key].options.window">
-                <option>Last minute</option>
-                <option>Last 5 minutes</option>
-                <option>Last 10 minutes</option>
-                <option>Last hour</option>
-                <option>Custom</option>
-              </select>
-            </div>
-            <button class="btn btn-sm btn-warning" ng-click="compare(key, viz[key].options)">Compare</button>
-          </form>
-            <div class="col-sm-12" style="padding-top:20px; padding-bottom:20px" ng-show="viz[key].options.window == 'Custom'">
-              <input ng-model="viz[key].options.slidervalue" type="text" id="mySlider1" slider options="viz[key].options.slideroptions" />
-            </div>
-          </div>
+            <div class="row well white" style="margin: 0; margin-bottom:20px" ng-show="enableComparison">
+              <form class="col-sm-12 form-horizontal" role="form">
+                <div class="form-group col-sm-5">
+                  <label class="label-control" for="exampleInputEmail2">Window</label>
+                  <select class="form-control" size="5" ng-model="viz[key].options.window">
+                    <option>Last minute</option>
+                    <option>Last 5 minutes</option>
+                    <option>Last 10 minutes</option>
+                    <option>Last hour</option>
+                    <option>Custom</option>
+                  </select>
+                </div>
+                <div class="form-group col-sm-2">
+                
+                </div>
+                <div class="form-group col-sm-5">
+                  <label class="label-control" for="exampleInputEmail2">Call History <a href="" ng-click="loadCalls(key)">(Reload)</a></label>
+                  <table class="table table-condensed table-bordered table-hover">
+                    <tr><th>Call</th><th width="10%">Compare</th></tr>
+                    <tr ng-repeat="call in viz[key].calls.from">
+                      <td>
+                        <a-call call="call" highlight="key"></a-call>
+                      </td>
+                      <td class="center">
+                        <a href="" ng-click="compareCall(key, call._id, true)"><span class="glyphicon glyphicon-transfer"></span></a>
+                      </td>
+                    </tr>
+                    <tr ng-repeat="call in viz[key].calls.to">
+                      <td>
+                        <a-call call="call" highlight="key"></a-call>
+                      </td>
+                      <td class="center">
+                        <a href="" ng-click="compareCall(key, call._id, false)"><span class="glyphicon glyphicon-transfer"></span></a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </form>
+                <div class="col-sm-12" style="padding-top:20px; padding-bottom:20px" ng-show="viz[key].options.window == 'Custom'">
+                  <input ng-model="viz[key].options.slidervalue" type="text" id="mySlider1" slider options="viz[key].options.slideroptions" />
+                </div>
+                <button class="btn btn-sm btn-warning" ng-click="compare(key, viz[key].options)">Compare</button>
+              </div>
         </div>
+
       <div class="col-sm-12">
           <table class="table table-condensed table-bordered table-hover normal white" ng-show="enableComparison">
             <tr><td></td>
-              <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{viz[key].results.averages.duration / 1000}} s</td><td><span class="bold red">CODEC:</span> {{viz[key].results.metadata.codec}}</td><td><span class="bold red">Computed MOS:</span> {{viz[key].results.averages.mos.MOS}}</td>
+              <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{viz[key].results.averages.duration / 1000}} s</td>
+
+              <td><span class="bold red">CODEC:</span> {{viz[key].results.metadata.codec}}</td>
+
+              <td><span class="bold red">Computed MOS:</span> {{viz[key].results.averages.mos.MOS}}<br/>
+                  <span class="bold red">Computed MOS:</span> {{viz[key].results.averages.mos.MOS_corrected}}
+
+              </td>
             </tr>
             <tr>
               <th></th><th>RTP Packet Flow (Avg. packets/s)</th><th>Packet Loss Rate (Avg. %)</th><th>Packet Out of Order Rate (Avg. %)</th><th>Jitter (Avg.)</th>
             </tr>
             <tr>
-              <td></td><td>{{viz[key].results.averages.rtp_rate}}</td><td>{{viz[key].results.averages.rtp_loss_rate * 100}}</td><td>{{viz[key].results.averages.rtp_ooo_rate * 100}}</td><td>{{viz[key].results.averages.rtp_jitter}}</td>
+              <td></td>
+              <td>{{viz[key].results.averages.rtp_rate}}</td>
+              <td>{{viz[key].results.averages.rtp_loss_rate * 100}}</td>
+              <td>{{viz[key].results.averages.rtp_ooo_rate * 100}}</td>
+              <td>{{viz[key].results.averages.rtp_jitter}}</td>
             </tr>
           </table>
       </div>
