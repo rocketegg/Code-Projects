@@ -28,6 +28,10 @@ angular.module('mean.system').config(['$stateProvider', '$urlRouterProvider',
                     url: '/visualization',
                     templateUrl: 'public/system/views/visualization.html'
                 })
+                .state('device', {
+                    url: '/device/:deviceId',
+                    templateUrl: 'public/system/views/device.html'
+                })
                 .state('packet simulator', {
                     url: '/',
                     templateUrl: 'public/system/views/index.html'

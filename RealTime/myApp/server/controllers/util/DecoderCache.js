@@ -40,6 +40,10 @@ var DecoderCache = function (size) {
     var bufferSize = size ? size : 12;  //approximately 1 minute worth of data
     //console.log("[DECODER CACHE] Initializing cache with buffer size %d", bufferSize);
 
+    this.hasKey = function(key) {
+        return cache.hasKey(key);
+    };
+
     this.pushPackets = function(key, value) {
         if (!cache.hasKey(key)) {
             //console.log("[DECODER CACHE] Initializing new buffer for key %s", key);

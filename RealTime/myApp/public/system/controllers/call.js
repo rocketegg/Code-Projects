@@ -16,6 +16,18 @@ angular.module('mean.system').controller('CallController',
     $scope.chartObjects = {};
     $scope.chartAverages = {};
 
+    $scope.$on('$stateChangeStart', function() {
+      console.log('Stopping polling of call view');
+      stopPolling();
+    });
+
+    function stopPolling() {
+      if ($scope.isPolling) {
+        $timeout.cancel(poller);  
+        $scope.isPolling = false;
+      }
+    }
+
     function startPolling() {
     	poller = $timeout(function() {
     		$scope.poll();

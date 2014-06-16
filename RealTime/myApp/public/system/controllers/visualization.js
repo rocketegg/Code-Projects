@@ -15,6 +15,7 @@ angular.module('mean.system').controller('VisualizationController',
     $scope.isPolling = false;
     $scope.chartObjects = {};
     $scope.chartAverages = {};
+    $scope.deviceTracking = {};
 
     //Upon transition away, stop polling
     $scope.$on('$stateChangeStart', function() {
@@ -56,7 +57,6 @@ angular.module('mean.system').controller('VisualizationController',
     	}).success(function(data, status, headers, config) {
     		$scope.visualizationdata = data.active_devices;
         processCharts(data.active_devices);
-
 
     	}).error(function(data, status, headers, config) {
     		console.log('error');
@@ -160,6 +160,85 @@ angular.module('mean.system').controller('VisualizationController',
     $scope.containsIP = function(IP_ADDRESS) {
       return $scope.options.IP_ADDRESS.indexOf(IP_ADDRESS) > -1;
     }
+
+    $scope.export = function(data) {
+      $http({
+        method:'POST',
+        url:'/export/object',
+        data: data
+      }).success(function(data) {
+        if( navigator.msSaveBlob ) {
+            // Save blob is supported, so get the blob as it's contentType and call save.
+            var blob = new Blob([data], { type: 'text/plain' });
+            navigator.msSaveBlob(blob, 'mydata.csv');
+            console.log("SaveBlob Success");
+        } else {
+          var urlCreator = window.URL || window.webkitURL || window.mozURL || window.msURL;
+          if (urlCreator) {
+              // Try to use a download link
+              var link = document.createElement("a");
+              if ("download" in link) {
+                  // Prepare a blob URL
+                  var blob = new Blob([data], { type: 'text/plain' });
+                  var url = urlCreator.createObjectURL(blob);
+                  link.setAttribute("href", url);
+
+                  // Set the download attribute (Supported in Chrome 14+ / Firefox 20+)
+                  link.setAttribute("download", 'mydata.csv');
+
+                  // Simulate clicking the download link
+                  var event = document.createEvent('MouseEvents');
+                  event.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
+                  link.dispatchEvent(event);
+
+                  console.log("Download link Success");
+
+              } else {
+                  // Prepare a blob URL
+                  // Use application/octet-stream when using window.location to force download
+                  var blob = new Blob([data], { type: 'text/plain' });
+                  var url = urlCreator.createObjectURL(blob);
+                  window.location = url;
+
+                  console.log("window.location Success");
+              }
+
+          } else {
+              console.log("Not supported");
+          }
+        }
+      
+      }).error(function(data) {
+
+      });
+    };
+
+    function trackDevice(key, average) {
+      var row = average;
+      $http({
+        method: 'GET',
+        url: '/device/find/summary',
+        params: {IP_ADDRESS: key}
+      }).success(function(data) {
+        if (data.statistics) {
+          row.std_dev_jitter_hour = data.statistics.last_hour.summary.rtp_jitter ? data.statistics.last_hour.summary.rtp_jitter.stddev : 0;
+          row.std_dev_jitter_ten_min = data.statistics.last_ten_min.summary.rtp_jitter ? data.statistics.last_ten_min.summary.rtp_jitter.stddev : 0;
+          row.std_dev_jitter_five_min = data.statistics.last_five_min.summary.rtp_jitter ? data.statistics.last_five_min.summary.rtp_jitter.stddev : 0;
+          row.std_dev_jitter_min = data.statistics.last_min.summary.rtp_jitter ? data.statistics.last_min.summary.rtp_jitter.stddev : 0;
+
+          if (!$scope.deviceTracking[key]) {
+            $scope.deviceTracking[key] = [];
+          }
+          $scope.deviceTracking[key].push(row);
+                //Size control
+          if ($scope.deviceTracking[key].length > $scope.viz[key].options.buffer.size && $scope.viz[key].options.buffer.size > 0) {
+            while ($scope.deviceTracking[key].length > $scope.viz[key].options.buffer.size) {
+              $scope.deviceTracking[key].splice(0,1);
+            }
+          }
+        }
+      });
+    }
     
     function processCharts (active_devices) {
         for (var key in $scope.chartObjects) {
@@ -167,14 +246,16 @@ angular.module('mean.system').controller('VisualizationController',
                 delete $scope.chartObjects[key];
                 delete $scope.chartAverages[key];
                 delete $scope.viz[key];
+                delete $scope.deviceTracking[key];
             }
         }
 
         for (var key in active_devices) {
             if ($scope.chartObjects.hasOwnProperty(key)) {
-                //update
+                //Update various objects
                 pushRows($scope.chartObjects[key], active_devices[key].intervals, active_devices[key].averages);
                 pushAverages($scope.chartAverages[key], active_devices[key].intervals, active_devices[key].averages);
+                trackDevice(key, active_devices[key].averages);
             } else {
                 var chartObject = {
                   "type": "ComboChart",
@@ -270,8 +351,15 @@ angular.module('mean.system').controller('VisualizationController',
 
                 pushRows(chartObject, active_devices[key].intervals, active_devices[key].averages);
                 pushAverages(chartAverage, active_devices[key].intervals, active_devices[key].averages);
+
+                //Initialize Charts per Device
                 $scope.chartObjects[key] = chartObject;
                 $scope.chartAverages[key] = chartAverage;
+
+                //Device Tracking
+                trackDevice(key, active_devices[key].averages);
+
+                //Initialize Visualization Options per Device
                 $scope.viz[key] = {
                   options: {
                     slidervalue: '0;5',
@@ -282,6 +370,9 @@ angular.module('mean.system').controller('VisualizationController',
                       dimension: " minutes ago",
                       scale: [0, '|', 10, '|', 20, '|' , 30, '|', 40, '|', 50, '|', 60]       
                     },
+                    buffer: {
+                      size: 50
+                    },
                     window: 'Last 5 minutes'
                   },
                   results: {}
@@ -289,19 +380,6 @@ angular.module('mean.system').controller('VisualizationController',
             }
         }
     }
-
-    // $scope.$watchCollection('viz', function(newvalue, oldvalue) {
-    //   console.log(newvalue);
-    //   updateChartRange(newvalue);
-    // }, true);
-
-    // function updateChartRange(key, newvalue) {
-    //   var to = newvalue.split(';')[0];
-    //   var from = newvalue.split(';')[1];
-    //   $scope.viz[key].options.endTime = new Date().getTime() - (to * 1000 * 60);
-    //   $scope.viz[key].options.startTime = new Date().getTime() - (from * 1000 * 60);
-    // }
-
     
     function pushRows(chartObject, data, averages) {
         function createChartRow(interval) {
@@ -329,6 +407,8 @@ angular.module('mean.system').controller('VisualizationController',
         }
     }
 
+    //This function pushes the average (over the window) onto the chart average object
+    //for a device
     function pushAverages(chartAverages, data, averages) {
         function createChartRow(interval) {
             var date = new Date(interval.timestamp);
@@ -363,7 +443,11 @@ angular.module('mean.system').controller('VisualizationController',
 
 .filter('reverse', function() {
   return function(items) {
-    return items.slice().reverse();
+    if (items) {
+      return items.slice().reverse();  
+    } else {
+      return items;
+    }
   };
 })
 

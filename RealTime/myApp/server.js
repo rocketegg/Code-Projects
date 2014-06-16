@@ -55,6 +55,13 @@ server.on('error', function (err) {
 server.on('message', function (msg, rinfo) {
   console.log('[LISTENER] Received a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s] of size [%d] bytes.', new Date(), msg.length);
   var decoded = _decoder.decode(msg, rinfo);  //decoded is a bundle of decoded packets that eventually will get saved to mongodb (at some point)
+  //1 - register device
+  if (!_decoderCache.hasKey(rinfo.address)) {
+    var Device = mongoose.model('Device');
+    Device.registerIfNecessary(rinfo.address);
+  }
+
+  //2 - track calls
   _sensor.trackCall(_decoderCache.filterAndStripByType(rinfo.address, 204, 4), decoded,
       function (err, callStart) {
         _callCache.setItem(callStart._id, callStart);
@@ -66,6 +73,8 @@ server.on('message', function (msg, rinfo) {
         //console.log(_callCache);
       }
     );
+
+  //2 - add to decoder cache
   _decoderCache.pushPackets(rinfo.address, decoded);
 });
 
@@ -94,6 +103,19 @@ var aggregator = new CronJob({
 
 console.log('Starting up cron job to aggregate packets packets');
 aggregator.start();
+
+var deviceMetric = new CronJob({
+  cronTime: '*/30 * * * * *',
+  //Runs once a minute, at 30 seconds
+  onTick: function() {
+    _aggregator.updateStatistics();
+  },
+  start: false,
+  timeZone: 'America/Los_Angeles'
+});
+
+console.log('Starting up cron job to aggregate metrics');
+deviceMetric.start();
 
 
 // Initialize Purger

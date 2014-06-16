@@ -50,7 +50,8 @@
     "view-helpers": "^0.1.4",
     "radius": "latest",
     "cron": "latest",
-    "async": "latest"
+    "async": "latest",
+    "json2csv": "latest"
   },
   "devDependencies": {
     "assetmanager": "^0.1.1",

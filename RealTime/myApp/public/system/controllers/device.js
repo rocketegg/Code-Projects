@@ -2,21 +2,35 @@
 
 angular.module('mean.system').controller('DeviceController', 
 
-	['$scope', 'Global', '$http', '$timeout', function ($scope, Global, $http, $timeout) {
+	['$scope', 'Global', '$http', '$timeout', '$stateParams', function ($scope, Global, $http, $timeout, $stateParams) {
 
     $scope.global = Global;
 
     var poller;
     $scope.isPolling = false;
     function startPolling() {
+        $scope.poll();
     	poller = $timeout(function() {
-    		$scope.poll();
     		startPolling();
     		$scope.isPolling = true;
-    	}, 1000);
+    	}, 5000);
     }
 
-    startPolling();
+    $scope.$on('$stateChangeStart', function() {
+      console.log('Stopping polling of analytics/window');
+      stopPolling();
+    });
+
+    function stopPolling() {
+      if ($scope.isPolling) {
+        $timeout.cancel(poller);  
+        $scope.isPolling = false;
+      }
+    }
+
+    $scope.startPolling = function() {
+        startPolling();
+    };
 
     $scope.togglePolling = function() {
     	if ($scope.isPolling) {
@@ -32,183 +46,157 @@ angular.module('mean.system').controller('DeviceController',
     	stopPolling();
     }
 
-    $scope.slidervalue = '0;5';
-    $scope.slideroptions = {       
-        from: 0,
-        to: 60,
-        step: 1,
-        dimension: " minutes ago",
-        scale: [0, '|', 10, '|', 20, '|' , 30, '|', 40, '|', 50, '|', 60]       
-    };
-
-  	$scope.$watch('slidervalue', function(newvalue, oldvalue) {
-  		updateChartRange(newvalue);
-  		$scope.poll();
-  	});
-
-  	function updateChartRange(newvalue) {
-  		var to = newvalue.split(';')[0];
-  		var from = newvalue.split(';')[1];
-  		$scope.mapreduce.endTime = new Date().getTime() - (to * 1000 * 60);
-  		$scope.mapreduce.startTime = new Date().getTime() - (from * 1000 * 60);
-  	}
-
     $scope.poll = function() {
 		//check status of cron job
     	$http({
     		method: 'GET',
-    		url: '/packets/status'
+    		url: '/device/all'
     	}).success(function(data, status, headers, config) {
-    		$scope.jobstatus = data;
+    		$scope.devices = data;
     	}).error(function(data, status, headers, config) {
     		console.log('error');
     	});
-
-        updateChartRange($scope.slidervalue);
     };
 
-    $scope.history = [];
-
-    //ANALYTICS
-    $scope.mapreduce = {
-        device: {
-            IP_ADDRESS: '127.0.0.1'
-        },
+    $scope.findOne = function() {
+        $http({
+            method: 'GET',
+            url: '/device/' + $stateParams.deviceId
+        }).success(function(data, status, headers, config) {
+            $scope.device = data;
+            $scope.chart_min = processCharts(data.statistics.last_min.rollup);
+            $scope.chart_five_min = processCharts(data.statistics.last_five_min.rollup);
+            $scope.chart_ten_min = processCharts(data.statistics.last_ten_min.rollup);
+            $scope.chart_hour = processCharts(data.statistics.last_hour.rollup);
+        }).error(function(data, status, headers, config) {
+            console.log('error');
+        });
     };
 
-    $scope.metricKeys = [
-        "MID_IN_RTP_DEST_PORT",
-        "MID_IN_RTP_SRC_PORT",
-        "MID_ECHO_CANCELLATION",
-        "MID_SILENCE_SUPPRESSION",
-        "MID_MEDIA_ENCYPTION",
-        "MID_RTP_8021D",
-        "MID_RTP_DSCP",
-        "MID_RTP_TTL",
-        "MID_FRAME_SIZE",
-        "MID_PAYLOAD_TYPE",
-        "MID_ADDR_PORT",
-        "MID_ECHO_TAIL_LENGTH",
-        "MID_SEQ_FALL_INSTANCES",
-        "MID_SEQ_JUMP_INSTANCES",
-        "MID_JITTER_BUFFER_OVERRUNS",
-        "MID_JITTER_BUFFER_UNDERRUNS",
-        "MID_MAX_JITTER",
-        "MID_RSVP_RECEIVER_STATUS",
-        "MID_LARGEST_SEQ_FALL",
-        "MID_LARGEST_SEQ_JUMP",
-        "MID_JITTER_BUFFER_DELAY",
-        "MID_RTCP_RTT"
-    ];
+    $scope.round = function(number) {
+        return Math.round(number * 100) / 100;
+    };
 
-    $scope.redo = function(query) {
-        $scope.mapreduce = query;
-        $scope.reduce(false);
+    function processCharts (rollup) {
+        var chartObject = {
+          "type": "ComboChart",
+          "displayed": true,
+          "options": {
+              "title":"MOS Score Over Time: ",
+              //"fill": 20,
+              "displayExactValues": true,
+              "seriesType": "bars",
+              "series": {
+                0: {type: "line"},
+                1: {type: "line"},
+                2: {type: "line"}
+              },
+              "isStacked": true,
+              "vAxes": [
+                  { "title": "MOS",
+                    "gridlines": {
+                      "count": 10
+                    }
+                  }
+              ],
+              "hAxis": {
+                "title": "Timestamp"
+              }
+          },
+          "data": {
+            "cols": [
+              {id: "t", label: "Timestamp", type: "string"},
+              {id: "MOS", label: "MOS Score", type: "number"},
+              {id: "MOS_corrected", label: "MOS Corrected", type: "number"},
+              ],
+            "rows":[
+            ]
+          }
+        };
+
+        for (var i = 0; i < rollup.length; i++) {
+            chartObject.data.rows.push(createRow(rollup[i]));
+        }
+
+        return chartObject;
     }
 
-    $scope.reduce = function(pushToHistory) {
-        var ips = $scope.mapreduce.device.IP_ADDRESS.split(',');
+    $scope.plot = function(chartObject, rollup, key) {
+        chartObject.data.cols.push({
+            id:key, label:key, type:'number'
+        });
+        for (var i = 0; i < chartObject.data.rows.length; i++) {
+            var row = chartObject.data.rows[i];
+            if (key === 'MOS' || key === 'MOS_corrected' || key === 'RFactor') {
+                var value = rollup[i].metrics && rollup[i].metrics.mos ? rollup[i].metrics.mos[key] : 0;
+                row.c.push({
+                    v: value
+                });
+                chartObject.data.rows[i] = row;
+            } else {
+                var value = rollup[i].metrics ? rollup[i].metrics[key] : 0;
+                row.c.push({
+                    v: value
+                });
+                chartObject.data.rows[i] = row;
+            }
+        }
+    };
 
-        if (!$scope.mapreduce.metricKeys || $scope.mapreduce.metricKeys.length < 1) {
-            alert('Select at least one metric to continue');
-        } else if (ips.length < 1 && !$scope.mapreduce.device.extension) {
-            alert('Enter at least 1 IP address or extension');
+    //TODO - finish unplot, plus and minus button, compute std devs and put in array
+    $scope.unplot = function(chartObject, key) {
+        var index = $scope.hasPlot(chartObject, key);
+        if (index !== -1) {
+            chartObject.data.cols.splice(index, 1);
+            for (var i = 0; i < chartObject.data.rows.length; i++) {
+                chartObject.data.rows[i].c.splice(index, 1);
+            }
+        }
+    };
+
+    $scope.hasPlot = function(chartObject, key) {
+        return chartObject.data.cols.map(function(i) { return i.id }).indexOf(key);
+    };
+
+    $scope.lastUpdate = function(rollup) {
+        if (rollup[rollup.length -1]) {
+            return new Date(rollup[rollup.length -1].endTime);
+        }
+    };
+
+    $scope.firstUpdate = function(rollup) {
+        if (rollup[0]) {
+            return new Date(rollup[0].startTime);
+        }
+    };
+
+    function createRow(interval) {
+        var date = new Date(interval.startTime);
+        // hours part from the timestamp
+        var hours = date.getHours();
+        // minutes part from the timestamp
+        var minutes = date.getMinutes();
+        // seconds part from the timestamp
+        var seconds = date.getSeconds();
+
+        // will display time in 10:30:23 format
+        var formattedTime = hours + ':' + minutes + ':' + seconds;
+        if (interval.metrics) {
+            var mos = interval.metrics.mos ? interval.metrics.mos.MOS : 0;
+            var mos_corrected = interval.metrics.mos ? interval.metrics.mos.MOS_corrected : 0;
+            return {
+                c: [{v: formattedTime},
+                    {v: mos},
+                    {v: mos_corrected}]
+            };
         } else {
-            if (pushToHistory) {
-                var query = angular.copy($scope.mapreduce, query);
-                $scope.history.push(query);
-            }
-            $http({
-                method: 'POST',
-                url: '/analytics/reduce',
-                data: $scope.mapreduce
-            }).success(function(data) {
-                console.log('Map reduce done.');
-                if (data.error) {
-                    $scope.mapreduceerror = data.error;
-                } else {
-                    $scope.mapreducedata = data;
-                    $scope.show = {};
-                    for (var i = 0; i < data.length; i++) {
-                        $scope.show[data[i]._id] = false;
-                    }
-                    $scope.aggregate = processStats(data);
-                    $scope.colormap = createColorMap(data);
-                    $scope.mapreduceerror = '';
-                }
-            }).error(function(err) {
-                $scope.mapreducedata = err;
-            });
+            return {
+                c: [{v: formattedTime},
+                    {v: 0},
+                    {v: 0}]
+            };
         }
-    };
 
-    /*
-    * Computes average by number of devices
-    */
-
-    var colors = [
-        'Crimson', 'DarkGreen', 'MidnightBlue', 'DarkMagenta', 'DarkOrange', 'Gold', 'LightPink', 'Aqua',  'Olive', 'Plum', 'Red', 'SteelBlue', 'YellowGreen'
-    ];
-    function createColorMap(data) {
-        var colormap = {};
-        for (var i = 0; i < data.length; i++) {
-            var idx = i % colors.length;
-            colormap[data[i]._id] = colors[idx];
-        }
-        return colormap;
-    }
-
-    function processStats(data) {
-        var aggregate = {};
-        if (data[0]) {
-            aggregate.devices = data[0]._id;
-            for (var key in data[0].value) {
-                aggregate[key] = {
-                    high: { 
-                        value: data[0].value[key].high,
-                        device: data[0]._id
-                    },
-                    low: {
-                        value: data[0].value[key].low,
-                        device: data[0]._id
-                    },
-                    average: {
-                        value: Math.round(data[0].value[key].total / data[0].value[key].count),
-                        device: data[0]._id
-                    }
-                } 
-            }
-            for (var i = 1; i < data.length; i++) {
-                aggregate.devices += ', ' + data[i]._id;
-                for (var key in data[i].value) {
-                    //compute high
-                    if (data[i].value[key].high > aggregate[key].high.value) {
-                        aggregate[key].high = {
-                            value: data[i].value[key].high,
-                            device: data[i]._id
-                        }
-                    }
-
-                    //compute low
-                    if (data[i].value[key].low < aggregate[key].low.value) {
-                        aggregate[key].low = {
-                            value: data[i].value[key].low,
-                            device: data[i]._id
-                        }
-                    }
-
-                    //compute (high) average
-                    var average = Math.round(data[i].value[key].total / data[i].value[key].count);
-                    if (average > aggregate[key].average.value) {
-                        aggregate[key].average = {
-                            value: average,
-                            device: data[i]._id
-                        }
-                    }
-                }
-            }
-        }
-        return aggregate;
     }
 }])
 

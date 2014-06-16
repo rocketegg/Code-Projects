@@ -422,7 +422,7 @@ PacketSchema.statics = {
             }]
           };
         this.find(query).sort({ _id : 1 }).exec(function(err, packets) {
-            console.log('[PACKET] compute window has %d packets.', packets.length);
+            console.log('[PACKET] compute window for %s has %d packets.', deviceIP, packets.length);
             if (cb)
                 cb(err, packets);
         });

@@ -15,12 +15,25 @@ angular.module('mean.system').controller('IndexController',
 
     var poller;
     $scope.isPolling = false;
+
     function startPolling() {
     	poller = $timeout(function() {
     		$scope.poll();
     		startPolling();
     		$scope.isPolling = true;
     	}, 1000);
+    }
+
+    $scope.$on('$stateChangeStart', function() {
+      console.log('Stopping polling of index view.');
+      stopPolling();
+    });
+
+    function stopPolling() {
+      if ($scope.isPolling) {
+        $timeout.cancel(poller);  
+        $scope.isPolling = false;
+      }
     }
 
     startPolling();

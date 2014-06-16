@@ -99,6 +99,28 @@
       </div>
     </div>
     <div class="row">
+      <div class="col-sm-12 paddedtopten">
+        <h4>Data Tracking <input type="checkbox" ng-model="enableTracking" class="input-control"/>
+        </h4>
+        <div ng-show="enableTracking">
+          <label class="label-control" for="buffer">Buffer Size</label>
+          <input name="buffer" ng-model="viz[key].options.buffer.size" class="input-control"/> 
+          <button class="btn btn-sm btn-danger" ng-click="deviceTracking[key] = []">Clear Buffer</button>
+          <a download="content.txt" class="btn btn-sm btn-success" ng-click="export(deviceTracking[key])">Export</a>
+
+          <table class="table table-condensed table-bordered table-hover normal white" style="margin-top:20px">
+            <tr><th ng-repeat="(key, value) in deviceTracking[key][0]" ng-if="key !== 'mos'">{{key}}</th><th ng-repeat="(key, value) in deviceTracking[key][0].mos">{{key}}</th></tr>
+            <tr ng-repeat="row in deviceTracking[key] | reverse">
+              <td ng-repeat="(key, value) in row" ng-if="key !== 'mos'">{{value}}
+              </td>
+              <td ng-repeat="(key2, value2) in row.mos">{{value2}}
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="row">
       <div class="col-sm-12">
           <h4>Comparison <input type="checkbox" ng-model="enableComparison" class="input-control" ng-click="loadCalls(key)"/></h4>
 

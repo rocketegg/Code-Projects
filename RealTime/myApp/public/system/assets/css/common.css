@@ -59,6 +59,15 @@ footer p {
   font-size: 11px;
 }
 
+.medium {
+  font-size:14px;
+}
+
+.alignbottom {
+  margin-top:6px;
+  vertical-align: bottom;
+}
+
 .right {
   float:right;
 }

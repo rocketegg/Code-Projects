@@ -33,6 +33,13 @@ exports.reduce = function(req, res) {
     });
 };
 
+// qos() - Queries the packets collection and compute the metrics for all packets returned
+// in the window
+//  GET: /analytics/qos?device=127.0.0.1&endTime=####&startTime=####
+//  params: 
+//      startTime: start time (unix time in ms)
+//      endTime: end time (unix time in ms)
+//      device: an ip address
 exports.qos = function(req, res) {
     console.log('[ANALYTICS] Beginning QOS computation statistics.');
     console.log(JSON.stringify(req.query));
@@ -61,6 +68,11 @@ function splitIPs(ip_string) {
   return IPs;
 }
 
+// window() - Queries the decoder cache and compute the metrics for a list of IPs with packets
+// in the decoder cache
+//  GET: /analytics/window?IP_ADDRESS=127.0.0.1, 10.30.172.47
+//  params: 
+//      IP_ADDRESS: a string of IP addresses (comma separated). This will be split and validated.
 exports.window = function(req, res) {
     console.log('[ANALYTICS] Returning metric interval for IPs %s.', req.query.IP_ADDRESS);
     var _analytic = new Analytic();

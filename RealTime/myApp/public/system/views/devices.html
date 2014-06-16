@@ -1,9 +1,32 @@
-<section data-ng-controller="DeviceController">
+<section data-ng-controller="DeviceController" data-ng-init="startPolling()">
+  <div class="row">
+    <div class="col-sm-12">
+      <legend>Available Devices</legend>
+      <table class="table table-condensed table-hover table-bordered table-striped">
+        <tr><th>Device</th>
+            <th>Id</th>
+            <th class="center">Go</th>
+        </tr>
+        <tr ng-repeat="device in devices">
+            <th><span class="glyphicon glyphicon glyphicon-phone-alt spacer"></span>  {{device.metadata.IP_ADDRESS}}</th>
+            <th>{{device._id}}</th>
+            <th class="center"><a href="#!/device/{{device._id}}"><span class="glyphicon glyphicon-arrow-right"></span></a></th>
+        </tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section data-ng-controller="AnalyticController">
+  <div class="row">
+    <div class="col-sm-12">
+      <legend>Analytics</legend>
+    </div>
+  </div>
   <div class="row">
     <div class="col-sm-3">
       <form class="form-horizontal">
         <fieldset>
-         <legend>Device Statistics</legend>
             <div class="form-group">
               <label class="col-lg-4 control-label">IP (comma separated)</label>
               <div class="col-lg-8">

@@ -1,0 +1,194 @@
+<section data-ng-controller="DeviceController" data-ng-init="findOne()">
+  <div class="row">
+    <div class="col-sm-12">
+      <legend>Device <a class="pull-right" href="" ng-click="findOne()"><span class="glyphicon glyphicon-refresh"></span> Refresh</a></legend>
+      <div class="row">
+        <div class="col-sm-4">
+          <span class="glyphicon glyphicon-phone-alt" style="font-size:128px"></span>
+        </div>
+        <div class="col-sm-8">
+          <table class="table table-condensed table-hover table-bordered table-striped">
+            <tr><th width="20%"></th>
+                <th>Metadata</th>
+            </tr>
+            <tr ng-repeat="(key,value) in device.metadata">
+              <td class="bold">{{key}}</td>
+              <td>{{value}}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- last min -->
+      <div class="row">
+        <div class="col-sm-12">
+          <legend>Last Minute <span class="pull-right">Range: <span class="red">{{firstUpdate(device.statistics.last_min.rollup) | date:'medium'}}</span> to <span class="green">{{lastUpdate(device.statistics.last_min.rollup) | date:'medium'}}</span></span></legend>
+        </div>
+        <div class="col-sm-4">
+          <table class="table table-condensed table-hover table-bordered table-striped small">
+            <tr><th>Statistic</th>
+                <th>High</th>
+                <th>Low</th>
+                <th>Total</th>
+                <th>Average</th>
+                <th>Plot</th>
+            </tr>
+            <tr ng-repeat="(key,value) in device.statistics.last_min.summary.mos" ng-if="key === 'MOS' || key === 'MOS_corrected' || key === 'RFactor'" class="green">
+              <td class="bold">{{key}}</td>
+              <td>{{round(value.high)}}</td>
+              <td>{{round(value.low)}}</td>
+              <td>{{round(value.total)}}</td>
+              <td>{{round(value.average)}}</td>
+              <td>
+                <a ng-if="hasPlot(chart_min, key) === -1" href="" ng-click="plot(chart_min, device.statistics.last_min.rollup, key)"><span class="glyphicon glyphicon-plus"></span></a>
+                <a ng-if="hasPlot(chart_min, key) > -1" href="" ng-click="unplot(chart_min, key)"><span class="glyphicon glyphicon-minus"></span></a>
+              </td>
+            </tr>
+            <tr ng-repeat="(key,value) in device.statistics.last_min.summary" ng-if="key !== 'mos'">
+              <td class="bold">{{key}}</td>
+              <td>{{round(value.high)}}</td>
+              <td>{{round(value.low)}}</td>
+              <td>{{round(value.total)}}</td>
+              <td>{{round(value.average)}}</td>
+              <td>
+                <a ng-if="hasPlot(chart_min, key) === -1" href="" ng-click="plot(chart_min, device.statistics.last_min.rollup, key)"><span class="glyphicon glyphicon-plus"></span></a>
+                <a ng-if="hasPlot(chart_min, key) > -1" href="" ng-click="unplot(chart_min, key)"><span class="glyphicon glyphicon-minus"></span></a>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="col-sm-8">
+          <div google-chart chart="chart_min" class="bordered"></div>
+        </div>
+      </div>
+      
+      <!-- last five min -->
+      <div class="row">
+        <div class="col-sm-12">
+          <legend>Last Five Minutes <span class="pull-right">Range: <span class="red">{{firstUpdate(device.statistics.last_five_min.rollup) | date:'medium'}}</span> to <span class="green">{{lastUpdate(device.statistics.last_five_min.rollup) | date:'medium'}}</span></span></legend>
+        </div>
+        <div class="col-sm-4">
+          <table class="table table-condensed table-hover table-bordered table-striped small">
+            <tr><th>Statistic</th>
+                <th>High</th>
+                <th>Low</th>
+                <th>Total</th>
+                <th>Average</th>
+                <th>Plot</th>
+            </tr>
+            <tr ng-repeat="(key,value) in device.statistics.last_five_min.summary.mos" ng-if="key === 'MOS' || key === 'MOS_corrected' || key === 'RFactor'" class="green">
+              <td class="bold">{{key}}</td>
+              <td>{{round(value.high)}}</td>
+              <td>{{round(value.low)}}</td>
+              <td>{{round(value.total)}}</td>
+              <td>{{round(value.average)}}</td>
+              <td>
+                <a ng-if="hasPlot(chart_five_min, key) === -1" href="" ng-click="plot(chart_five_min, device.statistics.last_five_min.rollup, key)"><span class="glyphicon glyphicon-plus"></span></a>
+                <a ng-if="hasPlot(chart_five_min, key) > -1" href="" ng-click="unplot(chart_five_min, key)"><span class="glyphicon glyphicon-minus"></span></a>
+              </td>
+            </tr>
+            <tr ng-repeat="(key,value) in device.statistics.last_five_min.summary" ng-if="key !== 'mos'">
+              <td class="bold">{{key}}</td>
+              <td>{{round(value.high)}}</td>
+              <td>{{round(value.low)}}</td>
+              <td>{{round(value.total)}}</td>
+              <td>{{round(value.average)}}</td>
+              <td>
+                <a ng-if="hasPlot(chart_five_min, key) === -1" href="" ng-click="plot(chart_five_min, device.statistics.last_five_min.rollup, key)"><span class="glyphicon glyphicon-plus"></span></a>
+                <a ng-if="hasPlot(chart_five_min, key) > -1" href="" ng-click="unplot(chart_five_min, key)"><span class="glyphicon glyphicon-minus"></span></a>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="col-sm-8">
+          <div google-chart chart="chart_five_min" class="bordered"></div>
+        </div>
+      </div>
+
+      <!-- last ten min -->
+      <div class="row">
+        <div class="col-sm-12">
+          <legend>Last Ten Minutes <span class="pull-right">Range: <span class="red">{{firstUpdate(device.statistics.last_ten_min.rollup) | date:'medium'}}</span> to <span class="green">{{lastUpdate(device.statistics.last_ten_min.rollup) | date:'medium'}}</span></span></legend>
+        </div>
+        <div class="col-sm-4">
+          <table class="table table-condensed table-hover table-bordered table-striped small">
+            <tr><th>Statistic</th>
+                <th>High</th>
+                <th>Low</th>
+                <th>Total</th>
+                <th>Average</th>
+                <th>Plot</th>
+            </tr>
+            <tr ng-repeat="(key,value) in device.statistics.last_ten_min.summary.mos" ng-if="key === 'MOS' || key === 'MOS_corrected' || key === 'RFactor'" class="green">
+              <td class="bold">{{key}}</td>
+              <td>{{round(value.high)}}</td>
+              <td>{{round(value.low)}}</td>
+              <td>{{round(value.total)}}</td>
+              <td>{{round(value.average)}}</td>
+              <td>
+                <a ng-if="hasPlot(chart_ten_min, key) === -1" href="" ng-click="plot(chart_ten_min, device.statistics.last_ten_min.rollup, key)"><span class="glyphicon glyphicon-plus"></span></a>
+                <a ng-if="hasPlot(chart_ten_min, key) > -1" href="" ng-click="unplot(chart_ten_min, key)"><span class="glyphicon glyphicon-minus"></span></a>
+              </td>
+            </tr>
+            <tr ng-repeat="(key,value) in device.statistics.last_ten_min.summary" ng-if="key !== 'mos'">
+              <td class="bold">{{key}}</td>
+              <td>{{round(value.high)}}</td>
+              <td>{{round(value.low)}}</td>
+              <td>{{round(value.total)}}</td>
+              <td>{{round(value.average)}}</td>
+              <td>
+                <a ng-if="hasPlot(chart_ten_min, key) === -1" href="" ng-click="plot(chart_ten_min, device.statistics.last_ten_min.rollup, key)"><span class="glyphicon glyphicon-plus"></span></a>
+                <a ng-if="hasPlot(chart_ten_min, key) > -1" href="" ng-click="unplot(chart_ten_min, key)"><span class="glyphicon glyphicon-minus"></span></a>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="col-sm-8">
+          <div google-chart chart="chart_ten_min" class="bordered"></div>
+        </div>
+      </div>
+
+      <!-- last hour -->
+      <div class="row">
+        <div class="col-sm-12">
+          <legend>Last Hour <span class="pull-right medium">Range: <span class="red">{{firstUpdate(device.statistics.last_hour.rollup) | date:'medium'}}</span> to <span class="green">{{lastUpdate(device.statistics.last_hour.rollup) | date:'medium'}}</span></span></legend>
+        </div>
+        <div class="col-sm-4">
+          <table class="table table-condensed table-hover table-bordered table-striped small">
+            <tr><th>Statistic</th>
+                <th>High</th>
+                <th>Low</th>
+                <th>Total</th>
+                <th>Average</th>
+                <th>Plot</th>
+            </tr>
+            <tr ng-repeat="(key,value) in device.statistics.last_hour.summary.mos" ng-if="key === 'MOS' || key === 'MOS_corrected' || key === 'RFactor'" class="green">
+              <td class="bold">{{key}}</td>
+              <td>{{round(value.high)}}</td>
+              <td>{{round(value.low)}}</td>
+              <td>{{round(value.total)}}</td>
+              <td>{{round(value.average)}}</td>
+              <td>
+                <a ng-if="hasPlot(chart_hour, key) === -1" href="" ng-click="plot(chart_hour, device.statistics.last_hour.rollup, key)"><span class="glyphicon glyphicon-plus"></span></a>
+                <a ng-if="hasPlot(chart_hour, key) > -1" href="" ng-click="unplot(chart_hour, key)"><span class="glyphicon glyphicon-minus"></span></a>
+              </td>
+            </tr>
+            <tr ng-repeat="(key,value) in device.statistics.last_hour.summary" ng-if="key !== 'mos'">
+              <td class="bold">{{key}}</td>
+              <td>{{round(value.high)}}</td>
+              <td>{{round(value.low)}}</td>
+              <td>{{round(value.total)}}</td>
+              <td>{{round(value.average)}}</td>
+              <td><a ng-if="hasPlot(chart_hour, key) === -1" href="" ng-click="plot(chart_hour, device.statistics.last_hour.rollup, key)"><span class="glyphicon glyphicon-plus"></span></a>
+                <a ng-if="hasPlot(chart_hour, key) > -1" href="" ng-click="unplot(chart_hour, key)"><span class="glyphicon glyphicon-minus"></span></a></td>
+            </tr>
+          </table>
+        </div>
+        <div class="col-sm-8">
+          <div google-chart chart="chart_hour" class="bordered"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
