@@ -21,7 +21,7 @@ angular.module('mean.system').controller('IndexController',
     		$scope.poll();
     		startPolling();
     		$scope.isPolling = true;
-    	}, 1000);
+    	}, 5000);
     }
 
     $scope.$on('$stateChangeStart', function() {
@@ -125,10 +125,10 @@ angular.module('mean.system').controller('IndexController',
     	}).success(function(data, status, headers, config) {
     		var responseTime = new Date().getTime() - currentTime;
     		createChartObjects(data);
-            createChartQOSObjects(data);
+        createChartQOSObjects(data);
     		createChartStatObjects(data, responseTime);
     	}).error(function(data, status, headers, config) {
-            var responseTime = new Date().getTime() - currentTime;
+        var responseTime = new Date().getTime() - currentTime;
     		console.log('error');
     		createChartStatObjects(data, responseTime);
     	});
@@ -195,9 +195,11 @@ angular.module('mean.system').controller('IndexController',
                 203: 0,
                 204: 0
             }
-            datapoint.stats.packet_distribution.forEach(function(packet) {
-                typeMap[packet.type] = packet.count ? packet.count : 0;
-            });
+            var packet;
+            for (var j = 0; j < datapoint.stats.packet_distribution.length; j++) {
+              packet = datapoint.stats.packet_distribution[j];
+              typeMap[packet.type] = packet.count ? packet.count : 0;
+            }
 
         	return {
 	            c: [{v: new Date(datapoint.timestamp)},
@@ -215,10 +217,9 @@ angular.module('mean.system').controller('IndexController',
         $scope.chartData = data;
         $scope.chartData.rows = [];
         $scope.chartObject.data.rows = [];
-        $scope.chartData.forEach(function(datapoint) { 
-          $scope.chartObject.data.rows.push(createChartRow(datapoint));
-        });
-
+        for (var i = 0; i < $scope.chartData.length; i++) {
+          $scope.chartObject.data.rows.push(createChartRow($scope.chartData[i]));
+        }
         $scope.lastChartObjectRow = $scope.chartObject.data.rows[$scope.chartObject.data.rows.length - 1];
     }
 
@@ -319,33 +320,40 @@ angular.module('mean.system').controller('IndexController',
 
         $scope.chartObjectQOS.data.rows = [];
         var unique_devices = [];
-        data.forEach(function(datapoint) { 
+        var datapoint, device;
+        for (var i = 0; i < data.length; i++) {
+            datapoint = data[i];
             //1 -find all devices
-            datapoint.stats.qos.forEach(function(device) {
-                if (unique_devices.indexOf(device.device) < 0) {
-                    unique_devices.push(device.device);
-                }
-            });
-        });
+            for (var j = 0; j < datapoint.stats.qos.length; j++) {
+              device = datapoint.stats.qos[j];
+              if (unique_devices.indexOf(device.device) < 0) {
+                  unique_devices.push(device.device);
+              }
+            }
+        }
 
         //2 - create a series for each device
         $scope.chartObjectQOS.data.cols = [{id: "asdf", label: "Timestamp", type: "string"}];
-        unique_devices.forEach(function(device) {
+        for (var k = 0; k < unique_devices.length; k++) { 
+            device = unique_devices[k];
             $scope.chartObjectQOS.data.cols.push({
                 id: device, label: device, type: "number"
             });
-        });
+        }
 
         //3 - plot all data points
-        data.forEach(function(datapoint) {
-            var row = [];
+        var row = [];
+        for (var i = 0; i < data.length; i++) {
+            datapoint = data[i];
+            row = [];
             row.push({v: new Date(datapoint.timestamp).toTimeString()});
 
-            unique_devices.forEach(function(device) {
+            for (var j = 0; j < unique_devices.length; j++) {
+                device = unique_devices[j];
                 var pushed = false;
-                for (var i = 0; i < datapoint.stats.qos.length; i++) {
-                    if (datapoint.stats.qos[i].device == device) {
-                        row.push({v:datapoint.stats.qos[i].interarrival_jitter ? datapoint.stats.qos[i].interarrival_jitter : 0});
+                for (var k = 0; k < datapoint.stats.qos.length; k++) {
+                    if (datapoint.stats.qos[k].device == device) {
+                        row.push({v:datapoint.stats.qos[k].interarrival_jitter ? datapoint.stats.qos[k].interarrival_jitter : 0});
                         pushed = true;
                         break;
                     }
@@ -353,13 +361,12 @@ angular.module('mean.system').controller('IndexController',
                 if (!pushed) {
                     row.push({v:0});
                 }
-                
-            });
+            }
 
             $scope.chartObjectQOS.data.rows.push({
                 c: row
             });
-        });
+        };
 
         $scope.lastChartObjectQOSRow = data[data.length - 1];
     }
