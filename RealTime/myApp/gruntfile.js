@@ -122,6 +122,8 @@ module.exports = function(grunt) {
         grunt.registerTask('default', ['jshint', 'csslint', 'concurrent']);
     }
 
+    grunt.registerTask('build', ['cssmin', 'uglify']);
+
     //Test task.
     grunt.registerTask('test', ['env:test', 'mochaTest', 'karma:unit']);
 };

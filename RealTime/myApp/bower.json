@@ -15,6 +15,7 @@
         "angular-sanitize": "latest",
         "angular-google-chart": "latest",
         "angular-multiselect":"latest",
-        "jQuery": "latest"
+        "jQuery": "latest",
+        "ui-multiselect": "latest"
     }
 }

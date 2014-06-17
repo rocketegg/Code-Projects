@@ -110,9 +110,11 @@ exports.snapshot = function(req, res) {
                 if (results[1]) {
                     var obj = _arrayUtils.flatten(results[1].averages);
                     obj.codec = results[1].metadata ? results[1].metadata.codec : 'unknown';
-                    obj.startTime = results[1].intervals[0].timestamp;
-                    obj.endTime = results[1].intervals[results[1].intervals.length-1].timestamp;
-
+                    if (results[1].intervals && results[1].intervals.length > 0) {
+                        obj.startTime = results[1].intervals[0].timestamp;
+                        obj.endTime = results[1].intervals[results[1].intervals.length-1].timestamp;
+                    }
+                    
                     if (results[0]) {
                         var data = results[0];
                         obj.std_dev_jitter_hour = data.statistics.last_hour.summary.rtp_jitter ? data.statistics.last_hour.summary.rtp_jitter.stddev : 0;

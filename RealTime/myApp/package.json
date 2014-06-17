@@ -25,7 +25,7 @@
     "postinstall": "node node_modules/bower/bin/bower install"
   },
   "dependencies": {
-    "assetmanager": "^0.1.1",
+    "assetmanager": "0.1.2",
     "bower": "^1.2.8",
     "connect-flash": "^0.1.1",
     "connect-mongo": "^0.4.0",
@@ -54,7 +54,7 @@
     "json2csv": "latest"
   },
   "devDependencies": {
-    "assetmanager": "^0.1.1",
+    "assetmanager": "0.1.2",
     "grunt-concurrent": "latest",
     "grunt-contrib-csslint": "^0.2.0",
     "grunt-contrib-cssmin": "^0.9.0",
