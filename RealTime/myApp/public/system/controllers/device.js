@@ -68,9 +68,46 @@ angular.module('mean.system').controller('DeviceController',
             $scope.chart_five_min = processCharts(data.statistics.last_five_min.rollup);
             $scope.chart_ten_min = processCharts(data.statistics.last_ten_min.rollup);
             $scope.chart_hour = processCharts(data.statistics.last_hour.rollup);
+            $scope.loadCallsForDevice($scope.device.metadata.IP_ADDRESS);
         }).error(function(data, status, headers, config) {
             console.log('error');
         });
+    };
+
+    $scope.loadCallsForDevice = function(IP) {
+        $http({
+            method: 'GET',
+            url: '/calls/device/',
+            params: {IP_ADDRESS: IP}
+        }).success(function(data, status, headers, config) {
+            for (var i = 0; i < data.to.length; i++) {
+                var duration = new Date(data.to[i].endTime).getTime() - new Date(data.to[i].startTime).getTime();
+                data.to[i].duration = $scope.convertMStoHMS(duration);
+            }
+
+            for (var i = 0; i < data.from.length; i++) {
+                var duration = new Date(data.from[i].endTime).getTime() - new Date(data.from[i].startTime).getTime();
+                data.from[i].duration = $scope.convertMStoHMS(duration);
+            }
+            $scope.callsToDevice = data.to;
+            $scope.callsFromDevice = data.from;
+        }).error(function(data, status, headers, config) {
+            console.log('error');
+        });
+    };
+
+    $scope.convertMStoHMS = function(duration) {
+      var orig = Math.floor(duration / 1000);
+      duration = orig;
+      var hours = Math.floor(duration / 3600);
+      var hours_prefix = hours < 10 ? '0' : '';
+      duration = duration % 3600;
+      var minutes = Math.floor(duration / 60);
+      var minutes_prefix = minutes < 10 ? '0' : '';
+      duration = duration % 60;
+      var seconds = duration;
+      var seconds_prefix = seconds < 10 ? '0' : '';
+      return hours_prefix + hours + ':' + minutes_prefix + minutes + ':' + seconds_prefix + seconds;
     };
 
     $scope.round = function(number) {

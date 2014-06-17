@@ -19,6 +19,65 @@
         </div>
       </div>
 
+      <div class="row margintoptwenty">
+        <div class="col-sm-12">
+          <legend>Calls</legend>
+          <h5>Outgoing Calls</h5>
+            <table class="table table-condensed table-hover table-bordered table-striped small">
+            <tr>
+              <th></th>
+              <th>Calls From Device</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Duration</th>
+            </tr>
+            <tr ng-repeat="call in callsFromDevice" >
+              <td>{{$index}}
+              </td>
+              <td>
+                <a-call call="call"></a-call>
+              </td>
+              <td>
+                {{call.startTime | date:'medium'}}
+              </td>
+
+              <td>
+                {{call.endTime | date:'medium'}}
+              </td>
+
+              <td>
+                {{call.duration}}
+              </td>
+
+            </tr>
+          </table>
+
+          <h5>Incoming Calls</h5>
+          <table class="table table-condensed table-hover table-bordered table-striped small">
+            <tr>
+              <th>Calls From Device</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Duration</th>
+            </tr>
+            <tr ng-repeat="call in callsToDevice" >
+              <td><a-call call="call"></a-call>
+              </td>
+              <td>
+                {{call.startTime | date:'medium'}}
+              </td>
+
+              <td>
+                {{call.endTime | date:'medium'}}
+              </td>
+              <td>
+                {{call.duration}}
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
       <!-- last min -->
       <div class="row">
         <div class="col-sm-12">
