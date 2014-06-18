@@ -113,6 +113,9 @@ exports.snapshot = function(req, res) {
                     if (results[1].intervals && results[1].intervals.length > 0) {
                         obj.startTime = results[1].intervals[0].timestamp;
                         obj.endTime = results[1].intervals[results[1].intervals.length-1].timestamp;
+                    } else {
+                        obj.startTime = 0;
+                        obj.endTime = 0;
                     }
                     
                     if (results[0]) {
@@ -121,9 +124,14 @@ exports.snapshot = function(req, res) {
                         obj.std_dev_jitter_ten_min = data.statistics.last_ten_min.summary.rtp_jitter ? data.statistics.last_ten_min.summary.rtp_jitter.stddev : 0;
                         obj.std_dev_jitter_five_min = data.statistics.last_five_min.summary.rtp_jitter ? data.statistics.last_five_min.summary.rtp_jitter.stddev : 0;
                         obj.std_dev_jitter_min = data.statistics.last_min.summary.rtp_jitter ? data.statistics.last_min.summary.rtp_jitter.stddev : 0;
+                    } else {
+                        obj.std_dev_jitter_hour = 0;
+                        obj.std_dev_jitter_ten_min = 0;
+                        obj.std_dev_jitter_five_min = 0;
+                        obj.std_dev_jitter_min = 0;
                     }
 
-                    var _fields = Object.keys(obj);
+                    var _fields = Object.keys(obj).sort();
                     json2csv({data: obj, fields: _fields}, 
                         function(err, csv) {
                             if (err) {

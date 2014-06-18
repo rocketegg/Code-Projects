@@ -12,7 +12,22 @@ var DecoderCache = require('./DecoderCache.js'),
 function computeMetrics(packetArray) {
 	var metric = {};
 	metric.intervals = [];
-	metric.averages = {};
+
+	//prefill values - just assumptions
+	metric.averages = {
+		duration: 0,
+		rtp_packet_total: 0,
+		rtp_rate: 0,
+		rtp_loss_total: 0, 
+		rtp_loss_rate: 0,
+		rtp_ooo_total: 0,
+		rtp_ooo_rate: 0,
+		rtp_jitter_snapshot: 0,
+		rtp_jitter_total: 0,
+		rtp_jitter: 0,
+	};
+	metric.averages.mos = computeMOS(metric.averages, 'G711u');
+
 	var prev, curr;
 
 	//compute intervals
