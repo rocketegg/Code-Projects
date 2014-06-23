@@ -26,10 +26,10 @@
           <h5>Historic MOS Score</h5>
           <table class="table table-condensed table-hover table-bordered table-striped small">
             <tr>
-              <th colspan=5>Last Call</th>
-              <th colspan=5>Last 5 Calls</th>
-              <th colspan=5>Last 10 Calls</th>
-              <th colspan=5>Lifetime</th>
+              <th colspan=5>Last Call ({{device.calls.last_call.rollup.length}})</th>
+              <th colspan=5>Last 5 Calls ({{device.calls.last_five_calls.rollup.length}})</th>
+              <th colspan=5>Last 10 Calls ({{device.calls.last_ten_calls.rollup.length}})</th>
+              <th colspan=5>Lifetime ({{device.calls.all_calls.rollup.length}})</th>
             </tr>
             <tr>
               <th>RTP Rate</th>
