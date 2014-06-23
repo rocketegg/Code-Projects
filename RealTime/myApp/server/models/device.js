@@ -202,7 +202,11 @@ DeviceSchema.statics = {
             'statistics.last_min.rollup': 0, 
             'statistics.last_hour.rollup': 0,
             'statistics.last_five_min.rollup': 0,
-            'statistics.last_ten_min.rollup': 0
+            'statistics.last_ten_min.rollup': 0,
+            'calls.last_call.rollup': 0, 
+            'calls.last_five_calls.rollup': 0,
+            'calls.last_ten_calls.rollup': 0,
+            'calls.all_calls.rollup': 0
         }).exec(cb);
     },
 

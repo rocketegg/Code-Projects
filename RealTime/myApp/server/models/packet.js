@@ -386,7 +386,7 @@ PacketSchema.statics = {
 
   slice: function (startTime, endTime, density, cb) {
     endTime = new Date().getTime();
-    console.log(new Date(endTime));
+    // console.log(new Date(endTime));
     this.find({
       timestamp: {
         $gte: startTime, 
@@ -422,7 +422,7 @@ PacketSchema.statics = {
             }]
           };
         this.find(query).sort({ _id : 1 }).exec(function(err, packets) {
-            console.log('[PACKET] compute window for %s has %d packets.', deviceIP, packets.length);
+            // console.log('[PACKET] compute window for %s has %d packets.', deviceIP, packets.length);
             if (cb)
                 cb(err, packets);
         });

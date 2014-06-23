@@ -118,17 +118,27 @@ exports.snapshot = function(req, res) {
                         obj.endTime = 0;
                     }
                     
+                    //loaded summary
                     if (results[0]) {
                         var data = results[0];
                         obj.std_dev_jitter_hour = data.statistics.last_hour.summary.rtp_jitter ? data.statistics.last_hour.summary.rtp_jitter.stddev : 0;
                         obj.std_dev_jitter_ten_min = data.statistics.last_ten_min.summary.rtp_jitter ? data.statistics.last_ten_min.summary.rtp_jitter.stddev : 0;
                         obj.std_dev_jitter_five_min = data.statistics.last_five_min.summary.rtp_jitter ? data.statistics.last_five_min.summary.rtp_jitter.stddev : 0;
                         obj.std_dev_jitter_min = data.statistics.last_min.summary.rtp_jitter ? data.statistics.last_min.summary.rtp_jitter.stddev : 0;
+
+                        obj.jitter_average_all_calls = data.calls.all_calls.summary.rtp_jitter ? data.calls.all_calls.summary.rtp_jitter.average : 0;
+                        obj.jitter_average_last_ten_calls = data.calls.last_ten_calls.summary.rtp_jitter ? data.calls.last_ten_calls.summary.rtp_jitter.average : 0;
+                        obj.jitter_average_last_five_calls = data.calls.last_five_calls.summary.rtp_jitter ? data.calls.last_five_calls.summary.rtp_jitter.stddev : 0;
+                        obj.jitter_average_last_call = data.calls.last_call.summary.rtp_jitter ? data.calls.last_call.summary.rtp_jitter.stddev : 0;
                     } else {
                         obj.std_dev_jitter_hour = 0;
                         obj.std_dev_jitter_ten_min = 0;
                         obj.std_dev_jitter_five_min = 0;
                         obj.std_dev_jitter_min = 0;
+                        obj.jitter_average_all_calls = 0;
+                        obj.jitter_average_last_ten_calls = 0;
+                        obj.jitter_average_last_five_calls = 0;
+                        obj.jitter_average_last_call = 0;
                     }
 
                     var _fields = Object.keys(obj).sort();
