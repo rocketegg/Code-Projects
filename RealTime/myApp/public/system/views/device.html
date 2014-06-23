@@ -22,57 +22,127 @@
       <div class="row margintoptwenty">
         <div class="col-sm-12">
           <legend>Calls</legend>
-          <h5>Outgoing Calls</h5>
-            <table class="table table-condensed table-hover table-bordered table-striped small">
+
+          <h5>Historic MOS Score</h5>
+          <table class="table table-condensed table-hover table-bordered table-striped small">
+            <tr>
+              <th colspan=5>Last Call</th>
+              <th colspan=5>Last 5 Calls</th>
+              <th colspan=5>Last 10 Calls</th>
+              <th colspan=5>Lifetime</th>
+            </tr>
+            <tr>
+              <th>RTP Rate</th>
+              <th>Loss (%)</th>
+              <th>Rejected (%)</th>
+              <th>Jitter</th>
+              <th>MOS</th>
+              <th>RTP Rate</th>
+              <th>Loss (%)</th>
+              <th>Rejected (%)</th>
+              <th>Jitter</th>
+              <th>MOS</th>
+              <th>RTP Rate</th>
+              <th>Loss (%)</th>
+              <th>Rejected (%)</th>
+              <th>Jitter</th>
+              <th>MOS</th>
+              <th>RTP Rate</th>
+              <th>Loss (%)</th>
+              <th>Rejected (%)</th>
+              <th>Jitter</th>
+              <th>MOS</th>
+            </tr>
+            <tr>
+              <td><a-round number="device.calls.last_call.summary.rtp_rate.average" decimals="2"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_call.summary.rtp_loss_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_call.summary.rtp_ooo_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_call.summary.rtp_jitter.average"></a-round></td>
+              <td><a-mos mos="device.calls.last_call.summary.mos.MOS.average" green="4" yellow="3.8" showmos="true"></a-mos></td>
+
+              <td><a-round decimals="2" number="device.calls.last_five_calls.summary.rtp_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_five_calls.summary.rtp_loss_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_five_calls.summary.rtp_ooo_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_five_calls.summary.rtp_jitter.average"></a-round></td>
+              <td><a-mos mos="device.calls.last_five_calls.summary.mos.MOS.average" green="4" yellow="3.8" showmos="true"></a-mos></td>
+
+              <td><a-round decimals="2" number="device.calls.last_ten_calls.summary.rtp_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_ten_calls.summary.rtp_loss_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_ten_calls.summary.rtp_ooo_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.last_ten_calls.summary.rtp_jitter.average"></a-round></td>
+              <td><a-mos mos="device.calls.last_ten_calls.summary.mos.MOS.average" green="4" yellow="3.8" showmos="true"></a-mos></td>
+
+              <td><a-round decimals="2" number="device.calls.all_calls.summary.rtp_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.all_calls.summary.rtp_loss_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.all_calls.summary.rtp_ooo_rate.average"></a-round></td>
+              <td><a-round decimals="2" number="device.calls.all_calls.summary.rtp_jitter.average"></a-round></td>
+              <td><a-mos mos="device.calls.all_calls.summary.mos.MOS.average" green="4" yellow="3.8" showmos="true"></a-mos></td>
+            </tr>
+          </table>
+
+          <h5>Active Calls</h5>
+          <table class="table table-condensed table-hover table-bordered table-striped small">
+            <tr>
+              <th></th>
+              <th>Call</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Duration</th>
+              <th>Average MOS</th>
+              <th>Active</th>
+            </tr>
+            <tr ng-repeat="call in activeCalls" >
+              <td>{{$index}}</td>
+              <td><a-call call="call"></a-call></td>
+              <td>{{call.startTime | date:'medium'}}</td>
+              <td>{{call.endTime | date:'medium'}}</td>
+              <td>{{call.duration}}</td>
+              <td><a-mos mos="call.metrics.from.averages.mos.MOS" green="4" yellow="3.8" showmos="true"></a-mos></td>
+              <td>{{!call.metadata.ended.to && !call.metadata.ended.from}}</td>
+            </tr>
+          </table>
+
+          <h5>Outgoing Calls <span class="right"><input type="text" class="form-control" ng-model="outgoingSearch" style="height:24px" placeholder="Filter..."/></span></h5>
+            <table class="table table-condensed table-hover table-bordered table-striped small margintoptwenty">
             <tr>
               <th></th>
               <th>Calls From Device</th>
               <th>Start Time</th>
               <th>End Time</th>
               <th>Duration</th>
+              <th>Average MOS</th>
+              <th>Active</th>
             </tr>
-            <tr ng-repeat="call in callsFromDevice" >
-              <td>{{$index}}
-              </td>
-              <td>
-                <a-call call="call"></a-call>
-              </td>
-              <td>
-                {{call.startTime | date:'medium'}}
-              </td>
-
-              <td>
-                {{call.endTime | date:'medium'}}
-              </td>
-
-              <td>
-                {{call.duration}}
-              </td>
-
+            <tr ng-repeat="call in callsFromDevice | filter:outgoingSearch" >
+              <td>{{$index}}</td>
+              <td><a-call call="call"></a-call></td>
+              <td>{{call.startTime | date:'medium'}}</td>
+              <td>{{call.endTime | date:'medium'}}</td>
+              <td>{{call.duration}}</td>
+              <td><a-mos mos="call.metrics.from.averages.mos.MOS" green="4" yellow="3.8" showmos="true"></a-mos></td>
+              <td>{{!call.metadata.ended.to && !call.metadata.ended.from}}</td>
             </tr>
           </table>
 
-          <h5>Incoming Calls</h5>
-          <table class="table table-condensed table-hover table-bordered table-striped small">
+          <h5>Incoming Calls <span class="right"><input type="text" class="form-control" ng-model="incomingSearch" style="height:24px" placeholder="Filter..."/></span></h5>
+          <table class="table table-condensed table-hover table-bordered table-striped small margintoptwenty">
             <tr>
+              <th></th>
               <th>Calls From Device</th>
               <th>Start Time</th>
               <th>End Time</th>
               <th>Duration</th>
+              <th>Average MOS</th>
+              <th>Active</th>
             </tr>
-            <tr ng-repeat="call in callsToDevice" >
-              <td><a-call call="call"></a-call>
-              </td>
-              <td>
-                {{call.startTime | date:'medium'}}
-              </td>
-
-              <td>
-                {{call.endTime | date:'medium'}}
-              </td>
-              <td>
-                {{call.duration}}
-              </td>
+            <tr ng-repeat="call in callsToDevice | filter:incomingSearch" >
+              <td>{{$index}}</td>
+              <td><a-call call="call"></a-call></td>
+              <td>{{call.startTime | date:'medium'}}</td>
+              <td>{{call.endTime | date:'medium'}}</td>
+              <td>{{call.duration}}</td>
+              <td><a-mos mos="call.metrics.to.averages.mos.MOS" green="4" yellow="3.8" showmos="true"></a-mos></td>
+              <td>{{!call.metadata.ended.to && !call.metadata.ended.from}}</td>
             </tr>
           </table>
         </div>
@@ -81,7 +151,7 @@
       <!-- last min -->
       <div class="row">
         <div class="col-sm-12">
-          <legend>Last Minute <span class="pull-right">Range: <span class="red">{{firstUpdate(device.statistics.last_min.rollup) | date:'medium'}}</span> to <span class="green">{{lastUpdate(device.statistics.last_min.rollup) | date:'medium'}}</span></span></legend>
+          <legend>Last Minute <span class="pull-right">Range: <span class="red">{{device.statistics.last_min.firstUpdate | date:'medium'}}</span> to <span class="green">{{device.statistics.last_min.lastUpdate | date:'medium'}}</span></span></legend>
         </div>
         <div class="col-sm-4">
           <table class="table table-condensed table-hover table-bordered table-striped small">
@@ -124,7 +194,7 @@
       <!-- last five min -->
       <div class="row">
         <div class="col-sm-12">
-          <legend>Last Five Minutes <span class="pull-right">Range: <span class="red">{{firstUpdate(device.statistics.last_five_min.rollup) | date:'medium'}}</span> to <span class="green">{{lastUpdate(device.statistics.last_five_min.rollup) | date:'medium'}}</span></span></legend>
+          <legend>Last Five Minutes <span class="pull-right">Range: <span class="red">{{device.statistics.last_five_min.firstUpdate | date:'medium'}}</span> to <span class="green">{{device.statistics.last_five_min.lastUpdate | date:'medium'}}</span></span></legend>
         </div>
         <div class="col-sm-4">
           <table class="table table-condensed table-hover table-bordered table-striped small">
@@ -167,7 +237,7 @@
       <!-- last ten min -->
       <div class="row">
         <div class="col-sm-12">
-          <legend>Last Ten Minutes <span class="pull-right">Range: <span class="red">{{firstUpdate(device.statistics.last_ten_min.rollup) | date:'medium'}}</span> to <span class="green">{{lastUpdate(device.statistics.last_ten_min.rollup) | date:'medium'}}</span></span></legend>
+          <legend>Last Ten Minutes <span class="pull-right">Range: <span class="red">{{device.statistics.last_ten_min.firstUpdate | date:'medium'}}</span> to <span class="green">{{device.statistics.last_ten_min.lastUpdate | date:'medium'}}</span></span></legend>
         </div>
         <div class="col-sm-4">
           <table class="table table-condensed table-hover table-bordered table-striped small">
@@ -210,7 +280,7 @@
       <!-- last hour -->
       <div class="row">
         <div class="col-sm-12">
-          <legend>Last Hour <span class="pull-right medium">Range: <span class="red">{{firstUpdate(device.statistics.last_hour.rollup) | date:'medium'}}</span> to <span class="green">{{lastUpdate(device.statistics.last_hour.rollup) | date:'medium'}}</span></span></legend>
+          <legend>Last Hour <span class="pull-right">Range: <span class="red">{{device.statistics.last_hour.firstUpdate | date:'medium'}}</span> to <span class="green">{{device.statistics.last_hour.lastUpdate | date:'medium'}}</span></span></legend>
         </div>
         <div class="col-sm-4">
           <table class="table table-condensed table-hover table-bordered table-striped small">

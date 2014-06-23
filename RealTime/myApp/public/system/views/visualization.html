@@ -1,4 +1,4 @@
-<section data-ng-controller="VisualizationController">
+<section data-ng-controller="VisualizationController" data-ng-init="startPolling()">
   <div class="row">
     <div class="col-sm-12">
       <form class="form-horizontal">
@@ -50,14 +50,15 @@
         <h4>{{key}}</h4>   
       </div>
       <div class="col-sm-3">       
-        <div class="right" ng-if="visualizationdata[key].averages.mos.MOS > 4">
+        <m-MOS mos="visualizationdata[key].averages.mos.MOS" green="4" yellow="3.8"></m-MOS>
+<!--         <div class="right" ng-if="visualizationdata[key].averages.mos.MOS > 4">
           <h4>Status: <span class="glyphicon glyphicon-ok green spacer"></span>
           </h4>
         </div>
         <div class="right" ng-if="visualizationdata[key].averages.mos.MOS > 3.8 && visualizationdata[key].averages.mos.MOS <= 4"><h4>Status: <span class="glyphicon glyphicon-ok yellow spacer"></span></h4>
         </div>
         <div class="right" ng-if="visualizationdata[key].averages.mos.MOS <= 3.8"><h4>Status: <span class="glyphicon glyphicon-ok red spacer"></span></h4>
-        </div>
+        </div> -->
       </div>
     </div>
     <div class="row">

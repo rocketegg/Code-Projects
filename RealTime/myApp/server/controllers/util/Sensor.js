@@ -255,6 +255,10 @@ var Sensor = function () {
         //Decoded is a bundle of RTCP packets that have been decoded
         //StartCB - cb called if a call is pushed
         //EndCB - cb called if a call is ended
+        //NOTE: Node is currently responsible for "ending calls", which
+        //means that a call will only be marked as "ended" if the server
+        //receiving packets receives the goodbye packet.  This may affect
+        //scalability in the future and may demand use of a proxy.
         trackCall: function(cache, decoded, startCB, endCB) {
             //console.log(cache);
             var decodedPacket = hasCallData(decoded);

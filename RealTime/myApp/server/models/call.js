@@ -5,7 +5,8 @@
  */
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-    async = require('async');
+    async = require('async'),
+    Analytic = require('../controllers/util/Analytic.js');
 
 /**
  * Article Schema
@@ -92,6 +93,14 @@ var CallSchema = new Schema({
 
 });
 
+CallSchema.post('init', function() {
+    this._original = this.toObject();
+});
+
+function isEnded(call) {
+    return (call.metadata.ended.to === true && call.metadata.ended.from === true);
+}
+
 /**
  * Statics
  */
@@ -105,13 +114,13 @@ CallSchema.statics = {
     loadAllCallsFromIP: function(deviceIP, cb) {
         this.find({
             'from.IP_ADDRESS': deviceIP
-        }).select('-metrics').exec(cb);
+        }).select('-metrics.from.intervals').exec(cb);
     },
 
     loadAllCallsToIP: function(deviceIP, cb) {
         this.find({
             'to.IP_ADDRESS': deviceIP
-        }).select('-metrics').exec(cb);
+        }).select('-metrics.from.intervals').exec(cb);
     },
 
     loadActiveCalls: function(cb) {
@@ -138,6 +147,60 @@ CallSchema.statics = {
 
     endCall: function(IP, SSRC, cb) {
 
+    },
+
+    backfillCallData: function(callId) {
+        CallSchema.getPackets(callId, 0, function(err, packets) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('\t[AGGREGATOR] Backfilling call %s.', callId);
+                var _analytic = new Analytic();
+                async.parallel([
+                    //caller
+                    function(callback) {
+                        _analytic.computeCall(packets[0].callerIP.packets, function(err, metrics) {
+                            var callerIP = call.from.IP_ADDRESS;
+                            var results = {};
+                            results[callerIP] = metrics;
+                            callback(err, results);
+                        });
+                    },
+                    function(callback) {
+                        _analytic.computeCall(packets[1].receiverIP.packets, function(err, metrics) {
+                            var receiverIP = call.to.IP_ADDRESS;
+                            var results = {};
+                            results[receiverIP] = metrics;
+                            callback(err, results);
+                        });
+                    }
+                ], function(err, results) {
+                    var response = {};
+                    for (var i = 0; i < results.length; i++) {
+                        for (var key in results[i]) {
+                            response[key] = results[i][key];
+                        }
+                    }
+                    console.log('\t[AGGREGATOR] Saving call data for call %s.', callId);
+                    call.metrics = {
+                        from: {
+                            IP_ADDRESS: call.from.IP_ADDRESS,
+                            intervals: response[call.from.IP_ADDRESS].intervals,
+                            averages: response[call.from.IP_ADDRESS].averages,
+                            metadata: response[call.from.IP_ADDRESS].metadata
+                        },
+                        to: {
+                            IP_ADDRESS: call.to.IP_ADDRESS,
+                            intervals: response[call.to.IP_ADDRESS].intervals,
+                            averages: response[call.to.IP_ADDRESS].averages,
+                            metadata: response[call.to.IP_ADDRESS].metadata
+                        }
+                    };
+                    call.save();
+                });
+
+            }
+        });
     },
 
     //for a call, will return packets

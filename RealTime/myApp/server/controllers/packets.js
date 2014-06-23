@@ -11,7 +11,8 @@ var mongoose = require('mongoose'),
     CronJob = require('cron').CronJob,
     Cache = require('./util/Cache.js'),
     fs = require('fs'),
-    util = require('util');
+    util = require('util'),
+    Decoder = require('./decoder.js');
 
 
 /**
@@ -120,6 +121,7 @@ exports.all = function(req, res) {
 var rtcpjob;
 var packetCache = new Cache();
 var client = dgram.createSocket('udp4');
+var directory = './packets/';
 
 exports.start = function(req, res) {
     console.log('[PACKET] starting up sending RTCP packets');
@@ -132,7 +134,7 @@ exports.start = function(req, res) {
     //Init packet cache
     if (packetCache.getSize().size < 1) {
         console.log('[CACHE]: Initializing packet cache.');
-        var directory = './packets/';
+
         fs.readdir(directory, function(err, files) { 
             if (err) throw err;
             files.forEach(function(file) {
@@ -212,5 +214,35 @@ exports.slice = function(req, res) {
         if (err) throw err;
 
         res.jsonp(packets);
+    });
+};
+
+//Turns packet capture on
+exports.capturestatus = function(req, res) {
+    var _instance = Decoder();
+
+    res.send(200, { 
+        status: _instance.getCapture()
+    });
+};
+
+
+//Turns packet capture on
+exports.captureon = function(req, res) {
+    var _instance = Decoder();
+    _instance.setCapture(true);
+
+    res.send(200, {
+        status: _instance.getCapture()
+    });
+};
+
+//Turns packet capture off
+exports.captureoff = function(req, res) {
+    var _instance = Decoder();
+    _instance.setCapture(false);
+
+    res.send(200, {
+        status: _instance.getCapture()
     });
 };

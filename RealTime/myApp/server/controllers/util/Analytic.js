@@ -449,6 +449,14 @@ function averageRollup(array) {
 
 }
 
+//TODO: convert to mapreduce
+//Increments an array with a new value, useful for keeping track of lifetime averages
+function incrementRollup(array, value) {
+
+	//return
+
+}
+
 //backfillOtherStatistics(device) 
 //For each denomination (1 min, 5, 10, hour), will compute the std dev of 
 //various metrics and backfill them in the devices collection.
@@ -629,6 +637,7 @@ var Analytic = function () {
     };
 
     //takes a rollup array (see Aggregator.js or Device.js) and finds high, low, average across duration
+    //can be called with a callback or serially
     this.averageRollups = function(averageArray, cb) {
     	if (cb) {
     		cb(averageRollup(averageArray));

@@ -101,6 +101,18 @@ span.spacer {
   padding-top:10px;
 }
 
+.paddedtoptwenty {
+  padding-top:20px;
+}
+
+.margintoptwenty {
+  margin-top:20px;
+}
+
+.margintopten {
+  margin-top:10px;
+}
+
 .green {
   color:green;
 }

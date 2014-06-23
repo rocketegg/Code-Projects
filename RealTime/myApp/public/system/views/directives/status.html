@@ -1,0 +1,14 @@
+<div ng-if="mos >= green">
+	<span class="glyphicon glyphicon-ok green spacer"></span>
+	<span ng-if="showmos === true">(<a-round number="mos" decimals="3"></a-round>)</span>
+</div>
+
+<div ng-if="mos >= yellow && mos < green">
+	<span class="glyphicon glyphicon-ok yellow spacer"></span>
+	<span ng-if="showmos === true">(<a-round number="mos" decimals="3"></a-round>)</span>
+</div>
+
+<div ng-if="mos < yellow">
+	<span class="glyphicon glyphicon-ok red spacer"></span>
+	<span ng-if="showmos === true">(<a-round number="mos" decimals="3"></a-round>)</span>
+</div>

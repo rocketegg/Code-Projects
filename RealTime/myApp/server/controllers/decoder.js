@@ -22,7 +22,7 @@ function makeid() {
 }
 
 //Entry method
-function decode (msg, rinfo, filename) {
+function decode (msg, rinfo, filename, captureOn) {
     function writeToFile(msg, filename) {
         if (!filename) {
             filename = 'rtcp_packets_' + makeid();
@@ -36,9 +36,11 @@ function decode (msg, rinfo, filename) {
 
     try {
         var timestamp = new Date().getTime();
-        console.log('[DECODE]: Decoding udp message with timestamp: %s', timestamp);
-        //UNCOMMENT THIS TO WRITE SOME PACKETS TO THE packets dir
-        //writeToFile(msg, filename);
+        console.log('[DECODE]: Decoding udp message with timestamp: %s.', timestamp);
+
+        if (captureOn)
+            writeToFile(msg, filename);
+
         var decoded = [];   //This code currently runs synchronously, pushing each decoded packet on the array, which is returned
         decode_packets(msg, rinfo, 0, timestamp, decoded);
         return decoded;
@@ -564,16 +566,39 @@ function findNextWord(octet) {
 }
 
 var DecoderUtil = function () {
+
+    if (DecoderUtil.prototype._singletonInstance) {
+        return DecoderUtil.prototype._singletonInstance;
+    }
+
+    DecoderUtil.prototype._singletonInstance = this;
+
     var msgCount = 0;
     var sessionId = makeid();
+    var captureOn = false;
 
-    return {
-        decode: function(msg, rinfo) {
-            var filename = 'rtcp_packets_' + sessionId + '_' + msgCount.toString();
-            var decoded = decode(msg, rinfo, filename);
-            msgCount++;
-            return decoded;
+    this.setCapture = function(capture) {
+        if (captureOn === false && capture === true) {  //reset sessionId, message count
+            sessionId = makeid();
+            msgCount = 0;
         }
+        captureOn = capture;
+
+    };
+
+    this.getCapture = function() {
+        return {
+            sessionId: sessionId,
+            captureOn: captureOn,
+            msgCount: msgCount
+        }
+    };
+
+    this.decode = function(msg, rinfo) {
+            var filename = 'rtcp_packets_' + sessionId + '_' + msgCount.toString() + '_' + new Date().getTime();
+            var decoded = decode(msg, rinfo, filename, captureOn);
+            msgCount++; //keeps track of number of udp received
+            return decoded;
     };
 };
 

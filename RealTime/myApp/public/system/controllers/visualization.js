@@ -48,6 +48,12 @@ angular.module('mean.system').controller('VisualizationController',
       }
     }
 
+    $scope.startPolling = function() {
+      $scope.poll();
+      $scope.isPolling = true;
+      startPolling();
+    };
+
     $scope.poll = function() {
 		//check status of cron job
     	$http({
@@ -221,10 +227,14 @@ angular.module('mean.system').controller('VisualizationController',
         params: {IP_ADDRESS: key}
       }).success(function(data) {
         if (data.statistics) {
-          row.std_dev_jitter_hour = data.statistics.last_hour.summary.rtp_jitter ? data.statistics.last_hour.summary.rtp_jitter.stddev : 0;
-          row.std_dev_jitter_ten_min = data.statistics.last_ten_min.summary.rtp_jitter ? data.statistics.last_ten_min.summary.rtp_jitter.stddev : 0;
-          row.std_dev_jitter_five_min = data.statistics.last_five_min.summary.rtp_jitter ? data.statistics.last_five_min.summary.rtp_jitter.stddev : 0;
-          row.std_dev_jitter_min = data.statistics.last_min.summary.rtp_jitter ? data.statistics.last_min.summary.rtp_jitter.stddev : 0;
+          if (data.statistics.last_hour)
+            row.std_dev_jitter_hour = data.statistics.last_hour.summary.rtp_jitter ? data.statistics.last_hour.summary.rtp_jitter.stddev : 0;
+          if (data.statistics.last_ten_min)
+            row.std_dev_jitter_ten_min = data.statistics.last_ten_min.summary.rtp_jitter ? data.statistics.last_ten_min.summary.rtp_jitter.stddev : 0;
+          if (data.statistics.last_five_min)
+            row.std_dev_jitter_five_min = data.statistics.last_five_min.summary.rtp_jitter ? data.statistics.last_five_min.summary.rtp_jitter.stddev : 0;
+          if (data.statistics.last_min)
+            row.std_dev_jitter_min = data.statistics.last_min.summary.rtp_jitter ? data.statistics.last_min.summary.rtp_jitter.stddev : 0;
 
           if (!$scope.deviceTracking[key]) {
             $scope.deviceTracking[key] = [];

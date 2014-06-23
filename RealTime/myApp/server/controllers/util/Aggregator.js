@@ -21,69 +21,105 @@ function backfillCallData(lastRun) {
                 $gte: lastRun   //i.e. newly expired
             }
         }]
-    }
+    };
     Call.find(query, function(err, calls) {
         if (err) throw err;
         if (calls.length > 0) {
             console.log('[AGGREGATOR]: Backfilling call data for [%d] new expired calls.', calls.length);
             calls.forEach(function(call) {
-                var callId = call._id;
-
-                Call.getPackets(callId, 0, function(err, packets) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log('\t[AGGREGATOR] Backfilling call %s.', callId);
-                        var _analytic = new Analytic();
-                        async.parallel([
-                            //caller
-                            function(callback) {
-                                _analytic.computeCall(packets[0].callerIP.packets, function(err, metrics) {
-                                    var callerIP = call.from.IP_ADDRESS;
-                                    var results = {};
-                                    results[callerIP] = metrics;
-                                    callback(err, results);
-                                });
-                            },
-                            function(callback) {
-                                _analytic.computeCall(packets[1].receiverIP.packets, function(err, metrics) {
-                                    var receiverIP = call.to.IP_ADDRESS;
-                                    var results = {};
-                                    results[receiverIP] = metrics;
-                                    callback(err, results);
-                                });
-                            }
-                        ], function(err, results) {
-                            var response = {};
-                            for (var i = 0; i < results.length; i++) {
-                                for (var key in results[i]) {
-                                    response[key] = results[i][key];
-                                }
-                            }
-                            console.log('\t[AGGREGATOR] Saving call data for call %s.', callId);
-                            call.metrics = {
-                                from: {
-                                    IP_ADDRESS: call.from.IP_ADDRESS,
-                                    intervals: response[call.from.IP_ADDRESS].intervals,
-                                    averages: response[call.from.IP_ADDRESS].averages,
-                                    metadata: response[call.from.IP_ADDRESS].metadata
-                                },
-                                to: {
-                                    IP_ADDRESS: call.to.IP_ADDRESS,
-                                    intervals: response[call.to.IP_ADDRESS].intervals,
-                                    averages: response[call.to.IP_ADDRESS].averages,
-                                    metadata: response[call.to.IP_ADDRESS].metadata
-                                }
-                            };
-                            call.save();
-                        });
-
-                    }
-                });
-
-            })
+                updateCallStatistics(call);
+            });
         }
     });
+}
+
+//updateCallStatistics()
+//This will update asynchronously the call metrics for a call.  Generally it is only
+//called once the call is complete (either via a goodbye packet or expiration), but also
+//if the user does an HTTP GET on the call id and there is no data yet populated
+function updateCallStatistics(call, cb) {
+    if (!call) {
+        return;
+    } else {
+        var callId = call._id;
+        var Call = mongoose.model('Call');
+        Call.getPackets(callId, 0, function(err, packets) {
+            if (err) throw err;
+            console.log('\t[AGGREGATOR] Backfilling call %s.', callId);
+            var _analytic = new Analytic();
+
+            //1) Compute metrics for the newly ended call
+            async.parallel([
+                //caller
+                function(callback) {
+                    _analytic.computeCall(packets[0].callerIP.packets, function(err, metrics) {
+                        var callerIP = call.from.IP_ADDRESS;
+                        var results = {};
+                        results[callerIP] = metrics;
+                        callback(err, results);
+                    });
+                },
+                function(callback) {
+                    _analytic.computeCall(packets[1].receiverIP.packets, function(err, metrics) {
+                        var receiverIP = call.to.IP_ADDRESS;
+                        var results = {};
+                        results[receiverIP] = metrics;
+                        callback(err, results);
+                    });
+                }
+            ], function(err, results) {
+                var response = {};
+                for (var i = 0; i < results.length; i++) {
+                    for (var key in results[i]) {
+                        response[key] = results[i][key];
+                    }
+                }
+                console.log('\t[AGGREGATOR] Saving call data for call %s.', callId);
+                call.metrics = {
+                    from: {
+                        IP_ADDRESS: call.from.IP_ADDRESS,
+                        intervals: response[call.from.IP_ADDRESS].intervals,
+                        averages: response[call.from.IP_ADDRESS].averages,
+                        metadata: response[call.from.IP_ADDRESS].metadata
+                    },
+                    to: {
+                        IP_ADDRESS: call.to.IP_ADDRESS,
+                        intervals: response[call.to.IP_ADDRESS].intervals,
+                        averages: response[call.to.IP_ADDRESS].averages,
+                        metadata: response[call.to.IP_ADDRESS].metadata
+                    }
+                };
+
+                //2) store call metrics in the device
+                var toIP = call.to.IP_ADDRESS;
+                var fromIP = call.from.IP_ADDRESS;
+                call.save(function(err) {
+                    if (!err) {
+                        var Device = mongoose.model('Device');
+
+                        if (toIP && toIP.length > 0) {
+                            Device.updateDeviceCall(toIP, callId, function(err) {
+                              console.log('Updating device call statistics for call ended: [%s] with callId [%s]', toIP, callId);
+                            });
+                        }
+
+                        if (fromIP && fromIP.length > 0) {
+                            Device.updateDeviceCall(fromIP, callId, function(err) {
+                              console.log('Updating device call statistics for call ended: [%s] with callId [%s]', fromIP, callId);
+                            });
+                        }
+
+                        //Do this asynchronously because we don't have to wait for the device
+                        if (cb) {
+                            cb(err, call);
+                        }
+                    } else {
+                        throw err;
+                    }
+                });
+            });
+        });
+    }   
 }
 
 //updateStatistics()
@@ -206,7 +242,6 @@ var Aggregator = function () {
             //console.log('[AGGREGATOR] Aggregating results @ [%s]', new Date());
             _filterer.query(lastRun);
             backfillCallData(lastRun);
-            //_reducer.query(lastRun);
         },
 
         //Updates all devices in devices collection, if no devices, does nothing
@@ -225,6 +260,15 @@ var Aggregator = function () {
                     }
                 });
             });
+        },
+
+        //updates the call metrics for a call
+        updateCallStatistics: function(call, cb) {
+            if (call) {
+                updateCallStatistics(call, cb);
+            } else {
+                cb(undefined);
+            }
         }
     };
 };

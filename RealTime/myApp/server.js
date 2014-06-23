@@ -63,14 +63,15 @@ server.on('message', function (msg, rinfo) {
 
   //2 - track calls
   _sensor.trackCall(_decoderCache.filterAndStripByType(rinfo.address, 204, 4), decoded,
+      //This function called when call is starting or already started
       function (err, callStart) {
         _callCache.setItem(callStart._id, callStart);
-        //console.log(_callCache);
       },
 
+      //This function called when call was started and call ends
       function (err, callEnd) {
         _callCache.clearItem(callEnd._id);
-        //console.log(_callCache);
+        console.log('Call ended.', callEnd._id);        
       }
     );
 

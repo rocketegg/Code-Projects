@@ -114,6 +114,15 @@ angular.module('mean.system').controller('IndexController',
     		console.log('error');
     	});
 
+      $http({
+        method: 'GET',
+        url: '/packets/capture/status'
+      }).success(function(data, status, headers, config) {
+        $scope.captureStatus = data.status;
+      }).error(function(data, status, headers, config) {
+        console.log('error getting packet capture status');
+      });
+
     	//get mongo slice (moving window based on current time)
 		updateChartRange($scope.slidervalue);
 
@@ -134,6 +143,14 @@ angular.module('mean.system').controller('IndexController',
     	});
 
     };
+
+  $scope.capture = function(on) {
+    if (on && on === true) {
+      $http.post('/packets/capture/on');
+    } else {
+      $http.post('/packets/capture/off');
+    }
+  };
 
 	$scope.chartObject = {
 	      "type": "ComboChart",

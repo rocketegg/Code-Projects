@@ -58,17 +58,27 @@ angular.module('mean.system').controller('DeviceController',
     	});
     };
 
+
     $scope.findOne = function() {
         $http({
             method: 'GET',
             url: '/device/' + $stateParams.deviceId
         }).success(function(data, status, headers, config) {
             $scope.device = data;
+
+            //error suppression
+            for (var key in data.statistics) {
+                $scope.device.statistics[key].firstUpdate = $scope.firstUpdate(data.statistics[key].rollup);
+                $scope.device.statistics[key].lastUpdate = $scope.lastUpdate(data.statistics[key].rollup);
+            }
+
             $scope.chart_min = processCharts(data.statistics.last_min.rollup);
             $scope.chart_five_min = processCharts(data.statistics.last_five_min.rollup);
             $scope.chart_ten_min = processCharts(data.statistics.last_ten_min.rollup);
             $scope.chart_hour = processCharts(data.statistics.last_hour.rollup);
             $scope.loadCallsForDevice($scope.device.metadata.IP_ADDRESS);
+
+
         }).error(function(data, status, headers, config) {
             console.log('error');
         });
@@ -80,15 +90,25 @@ angular.module('mean.system').controller('DeviceController',
             url: '/calls/device/',
             params: {IP_ADDRESS: IP}
         }).success(function(data, status, headers, config) {
+            $scope.activeCalls = [];
             for (var i = 0; i < data.to.length; i++) {
                 var duration = new Date(data.to[i].endTime).getTime() - new Date(data.to[i].startTime).getTime();
                 data.to[i].duration = $scope.convertMStoHMS(duration);
+                if (data.to[i].metadata.ended.to === false && data.to[i].metadata.ended.from === false) {
+                    $scope.activeCalls.push(data.to[i]);
+                    data.to.splice(i, 1);
+                }
             }
 
             for (var i = 0; i < data.from.length; i++) {
                 var duration = new Date(data.from[i].endTime).getTime() - new Date(data.from[i].startTime).getTime();
                 data.from[i].duration = $scope.convertMStoHMS(duration);
+                if (data.from[i].metadata.ended.to === false && data.from[i].metadata.ended.from === false) {
+                    $scope.activeCalls.push(data.from[i]);
+                    data.from.splice(i, 1);
+                }
             }
+            
             $scope.callsToDevice = data.to;
             $scope.callsFromDevice = data.from;
         }).error(function(data, status, headers, config) {
@@ -196,13 +216,13 @@ angular.module('mean.system').controller('DeviceController',
     };
 
     $scope.lastUpdate = function(rollup) {
-        if (rollup[rollup.length -1]) {
+        if (rollup && rollup[rollup.length -1]) {
             return new Date(rollup[rollup.length -1].endTime);
         }
     };
 
     $scope.firstUpdate = function(rollup) {
-        if (rollup[0]) {
+        if (rollup && rollup[0]) {
             return new Date(rollup[0].startTime);
         }
     };

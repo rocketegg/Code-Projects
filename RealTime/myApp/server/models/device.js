@@ -30,7 +30,14 @@ var DeviceSchema = new Schema({
     statistics: {
         last_min: {
             //If there is data, it will be of this form:
-            rollup: [],  //averages at the stalenessThreshold interval (see Aggregator.js)
+            //averages at the stalenessThreshold interval (see Aggregator.js)
+            rollup: [
+                //metrics: {} - an array of computed metrics for this rollup interval
+                //numPackets: number - the number of packets in the rollup
+                //endTime: endTime of rollup
+                //startTime: startTime of rollup
+
+            ],  
             summary: {} //averages, sums, std devs across whole rollup window
         },
         last_five_min: {
@@ -45,12 +52,29 @@ var DeviceSchema = new Schema({
             rollup: [],
             summary: {}
         },
-        all_calls: {
-            rollup: [], //contains average per call
-            summary: {}
-        },
         last_updated: {
             type: Date
+        }
+    },
+
+    calls: {
+        last_call: {
+            rollup: [],
+            summary: {
+                //will contain average metrics across rollup window
+            }
+        },
+        last_five_calls: {
+            rollup: [],
+            summary: {}
+        },
+        last_ten_calls: {
+            rollup: [],
+            summary: {}
+        },
+        all_calls: {
+            rollup: [],
+            summary: {}
         }
     }
 });
@@ -106,6 +130,58 @@ DeviceSchema.pre('save', function(next) {
     }
 });
 
+//This function takes the last call and updates metrics in the device
+//Currently we keep track of
+//  - All Calls (all calls, and summary over all calls)
+//  - Last call 
+//  - Last five calls
+//  - Last 10 calls 
+//  - The data format follows that of the statistics object
+function updateLastCall(device, _call, cb) {
+    var _analytic = new Analytic();
+
+    //initialization
+    if (!device.calls.all_calls) {
+        device.calls.all_calls = {};
+        device.calls.all_calls.rollup = [];
+        device.calls.last_five_calls = {};
+        device.calls.last_five_calls.rollup = [];
+        device.calls.last_five_calls = {};
+        device.calls.last_five_calls.rollup = [];
+    }
+
+    var metricsForCall;
+    var IP_ADDRESS = device.metadata.IP_ADDRESS;
+    if (_call.metrics && _call.metrics.from.IP_ADDRESS === IP_ADDRESS) {
+        metricsForCall = _call.metrics.from.averages;
+    } else if (_call.metrics && _call.metrics.to.IP_ADDRESS === IP_ADDRESS) {
+        metricsForCall = _call.metrics.to.averages;
+    }
+
+    device.calls.all_calls.rollup.push({
+        metrics: metricsForCall
+    });
+
+    var last = device.calls.all_calls.rollup.length - 1;
+    device.calls.all_calls.rollup[last].callId = _call._id;
+    //TODO - We can implement an online algorithm to update summaries (will be faster than computing across entire call array)
+    //var lastsummary = device.calls.all_calls.summary;
+    //device.calls.all_calls.summary = incrementSummary(lastsummary, metricsForCall);
+
+    //get slices
+    device.calls.last_call.rollup = device.calls.all_calls.rollup.slice(-1);
+    device.calls.last_five_calls.rollup = device.calls.all_calls.rollup.slice(-5);
+    device.calls.last_ten_calls.rollup = device.calls.all_calls.rollup.slice(-10);
+
+    //compute new summaries
+    device.calls.last_call.summary = _analytic.averageRollups(device.calls.last_call.rollup.map(function(i) { return i.metrics; }));
+    device.calls.last_five_calls.summary = _analytic.averageRollups(device.calls.last_five_calls.rollup.map(function(i) { return i.metrics; }));
+    device.calls.last_ten_calls.summary = _analytic.averageRollups(device.calls.last_ten_calls.rollup.map(function(i) { return i.metrics; }));
+    device.calls.all_calls.summary = _analytic.averageRollups(device.calls.all_calls.rollup.map(function(i) { return i.metrics; }));
+    
+    device.save(cb);
+}
+
 DeviceSchema.statics = {
     load: function(deviceId, cb) {
         this.findOne({
@@ -131,18 +207,82 @@ DeviceSchema.statics = {
     },
 
     //when a call ends, update the statistics for this device
-    updateStatisticsForCall: function(IP_ADDRESS, callId, cb) {
+    updateDeviceCall: function(IP_ADDRESS, callId, cb) {
+        console.log('[DEVICE]: Updating device call for IP %s and callID %s.', IP_ADDRESS, callId);
+        this.findOne({
+            'metadata.IP_ADDRESS': IP_ADDRESS
+        }, function(err, device) {
+            if (err) throw err;
 
-    },
+            if (!device) {
+                cb(err, device);
+            } else {
+                //update last call
+                if (!device.calls) {
+                    device.calls = {};
+                }
 
-    //given a starttime, update all stale statistics
-    updateStatistics: function(IP_ADDRESS, cb) {
-
+                var Call = mongoose.model('Call');
+                Call.load(callId, function(err, _call) {
+                    updateLastCall(device, _call, cb);
+                });
+            }
+        });
     },
 
     //will reset all statistics for this device
-    resetStatistics: function(IP_ADDRESS) {
+    resetStatistics: function(IP_ADDRESS, cb) {
+        DeviceSchema.loadByIP(IP_ADDRESS, function(err, device) {
+            if (err) throw err;
 
+            if (!device) {
+                cb(err, device);
+            } else {
+                var _blankStats = {
+                    last_min: {
+                        rollup: [],  
+                        summary: {}
+                    },
+                    last_five_min: {
+                        rollup: [],
+                        summary: {}
+                    },
+                    last_ten_min: {
+                        rollup: [],
+                        summary: {}
+                    },
+                    last_hour: {
+                        rollup: [],
+                        summary: {}
+                    },
+                    last_updated: {
+                        type: Date
+                    }
+                };
+
+                var _blankCalls = {
+                    last_call: {
+                        rollup: [],
+                        summary: {}
+                    },
+                    last_five_calls: {
+                        rollup: [],
+                        summary: {}
+                    },
+                    last_ten_calls: {
+                        rollup: [],
+                        summary: {}
+                    },
+                    all_calls: {
+                        rollup: [],
+                        summary: {}
+                    }
+                }
+                device.statistics = _blankStats;
+                device.calls = _blankCalls;
+                device.save(cb);
+            }
+        });
     },
 
     registerIfNecessary: function(IP_ADDRESS) {

@@ -43,6 +43,36 @@
           </div>
         </fieldset>
       </form>
+
+      <form class="form-horizontal">
+        <fieldset>
+          <legend>Packet Capture</legend>
+          <div class="form-group">
+            <label for="ip" class="col-lg-6 control-label">Capture Status</label>
+            <div class="col-lg-6">
+              <h5>{{captureStatus.captureOn}}</h5>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="ip" class="col-lg-6 control-label">Session Id</label>
+            <div class="col-lg-6">
+              <h5>{{captureStatus.sessionId}}</h5>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="ip" class="col-lg-6 control-label">Message Count</label>
+            <div class="col-lg-6">
+              <h5>{{captureStatus.msgCount}}</h5>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-lg-8 col-lg-offset-4">
+              <button class="btn btn-danger btn-sm" ng-click="capture(false)" ng-class="{'disabled': !captureStatus.captureOn}">Stop</button>
+              <button ng-click="capture(true)" class="btn btn-success btn-sm" ng-class="{'disabled': captureStatus.captureOn}">Start</button>
+            </div>
+          </div>
+        </fieldset>
+      </form>
     </div>
 
 
@@ -130,11 +160,11 @@
                 <th>Packets Lost</th>
               </tr>
               <tr ng-repeat="device in lastChartObjectQOSRow.stats.qos">
-              <td>{{$index}}</td>
-              <td>{{lastChartObjectQOSRow.timestamp | date:'medium'}}</td>
-              <td>{{device.device}}</td>
-              <td>{{device.interarrival_jitter}}</td>
-              <td>{{device.cumulative_lost_packets}}</td>
+                <td>{{$index}}</td>
+                <td>{{lastChartObjectQOSRow.timestamp | date:'medium'}}</td>
+                <td>{{device.device}}</td>
+                <td>{{device.interarrival_jitter}}</td>
+                <td>{{device.cumulative_lost_packets}}</td>
               </tr>
             </table>
             </div>

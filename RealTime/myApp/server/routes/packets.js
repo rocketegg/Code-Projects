@@ -6,6 +6,11 @@ var packets = require('../controllers/packets');
 module.exports = function(app) {
 
     app.get('/packets', packets.all);
+
+    app.get('/packets/capture/status', packets.capturestatus);
+    app.post('/packets/capture/on', packets.captureon);
+    app.post('/packets/capture/off', packets.captureoff);
+
     app.post('/packets/start', packets.start);
     app.post('/packets/stop', packets.stop);
     app.get('/packets/slice', packets.slice);

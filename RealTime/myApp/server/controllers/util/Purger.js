@@ -3,7 +3,7 @@
 'use strict';
 var mongoose = require('mongoose');
 
-var expirationThreshold = 300000;   //5 min, calls without update for this value will be ended
+var expirationThreshold = 60000;   //1 min, calls without update for this value will be ended
 var removePacketThreshold = 6 * 60 * 60 * 1000;     //6 hours, packets older than this value will be deleted
 var removeCallThreshold = 60 * 60 * 1000 * 24;     //1 day, calls older than this value will be deleted
 
@@ -84,6 +84,12 @@ var Purger = function () {
                         if (!calls[i].metadata.ended.to_reason || calls[i].metadata.ended.to_reason === '') {
                             calls[i].metadata.ended.to_reason = 'Timed out'
                         }
+
+                        var toIP = calls[i].to.IP_ADDRESS;
+                        var fromIP = calls[i].from.IP_ADDRESS;
+                        var callId = calls[i]._id;
+
+                        //After expiring calls, update devices will be picked up by the Aggregator
                         calls[i].save();
                     }
                 }
