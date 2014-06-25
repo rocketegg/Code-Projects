@@ -51,7 +51,8 @@
     "radius": "latest",
     "cron": "latest",
     "async": "latest",
-    "json2csv": "latest"
+    "json2csv": "latest",
+    "pm2": "~0.8.11"
   },
   "devDependencies": {
     "assetmanager": "0.1.2",
