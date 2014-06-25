@@ -5,7 +5,7 @@ var mongoose = require('mongoose');
 
 var expirationThreshold = 60000;   //1 min, calls without update for this value will be ended
 var removePacketThreshold = 6 * 60 * 60 * 1000;     //6 hours, packets older than this value will be deleted
-var removeCallThreshold = 60 * 60 * 1000 * 24;     //1 day, calls older than this value will be deleted
+var removeCallThreshold = 7 * 60 * 60 * 1000 * 24;     //1 day, calls older than this value will be deleted
 
 var Purger = function () {
     return {
