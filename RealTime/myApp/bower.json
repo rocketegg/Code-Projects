@@ -9,7 +9,7 @@
         "angular-route": "latest",
         "bootstrap": "3.0.3",
         "angular-bootstrap": "0.10.0",
-        "angular-ui-router": "#master",
+        "angular-ui-router": "0.2.10",
         "angular-ui-utils": "0.1.1",
         "ng-slider": "latest",
         "angular-sanitize": "latest",
@@ -17,5 +17,8 @@
         "angular-multiselect":"latest",
         "jQuery": "latest",
         "ui-multiselect": "latest"
+    },
+    "resolutions": {
+      "angular": "1.2.6"
     }
 }
