@@ -19,6 +19,6 @@
         "ui-multiselect": "latest"
     },
     "resolutions": {
-      "angular": "1.2.6"
+      "angular": "1.2.16"
     }
 }
