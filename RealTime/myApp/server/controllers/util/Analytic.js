@@ -409,7 +409,7 @@ function averageRollup(array) {
 	if (array.length === 0) { return stats; }
 	//Initialize - try to find keys
 	for (var i = 0; i < array.length; i++) {
-		if (array[i] !== null && Object.keys(array[i]).length > 0) {
+		if (array[i] && Object.keys(array[i]).length > 0) {
 			for (var key in array[i]) {
 				if (typeof array[i][key] === 'number') {
 					stats[key] = {};
@@ -421,8 +421,10 @@ function averageRollup(array) {
 				}
 				else {	//e.g. for MOS score rollup
 					stats[key] = averageRollup(array.map(function(j) { 
-						if (j)
+						if (j[key])
 							return j[key]; 
+						else
+							return {};
 					}));
 				}
 			}
