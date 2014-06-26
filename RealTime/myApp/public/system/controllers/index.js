@@ -124,9 +124,9 @@ angular.module('mean.system').controller('IndexController',
       });
 
     	//get mongo slice (moving window based on current time)
-		updateChartRange($scope.slidervalue);
+		  updateChartRange($scope.slidervalue);
 
-		var currentTime = new Date().getTime();
+		  var currentTime = new Date().getTime();
     	$http({
     		method: 'GET',
     		url: '/packets/slice',

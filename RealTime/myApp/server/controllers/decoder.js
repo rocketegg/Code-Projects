@@ -565,13 +565,13 @@ function findNextWord(octet) {
     }
 }
 
-var DecoderUtil = function () {
+var Decoder = function () {
 
-    if (DecoderUtil.prototype._singletonInstance) {
-        return DecoderUtil.prototype._singletonInstance;
+    if (Decoder.prototype._singletonInstance) {
+        return Decoder.prototype._singletonInstance;
     }
 
-    DecoderUtil.prototype._singletonInstance = this;
+    Decoder.prototype._singletonInstance = this;
 
     var msgCount = 0;
     var sessionId = makeid();
@@ -595,11 +595,11 @@ var DecoderUtil = function () {
     };
 
     this.decode = function(msg, rinfo) {
-            var filename = 'rtcp_packets_' + sessionId + '_' + msgCount.toString() + '_' + new Date().getTime();
-            var decoded = decode(msg, rinfo, filename, captureOn);
-            msgCount++; //keeps track of number of udp received
-            return decoded;
+        var filename = 'rtcp_packets_' + sessionId + '_' + msgCount.toString() + '_' + new Date().getTime();
+        var decoded = decode(msg, rinfo, filename, captureOn);
+        msgCount++; //keeps track of number of udp received
+        return decoded;
     };
 };
 
-module.exports = DecoderUtil;
+module.exports = Decoder;
