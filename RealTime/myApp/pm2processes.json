@@ -4,7 +4,7 @@
   "args"        : "['']",
   "instances"   : "1",
   "exec_mode"   : "cluster",
-  "ignoreWatch" : ["[\\/\\\\]\\./", "node_modules", "public/system/lib"],
+  "ignoreWatch" : ["[\\/\\\\]\\./", "node_modules", "public/system/lib", "packets"],
   "watch"       : "true",
   "cwd"         : "",
   "env": {
