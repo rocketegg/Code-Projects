@@ -11,14 +11,38 @@ var decoders = {
     '204': decode_204   //APPLICATION-DEFINED
 };
 
-function makeid() {
+//Will create a unique id for the session
+function makeid(length) {
     var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var len = length ? length : 5;  //default length
+    var count = 0;
+    do {
+        text = '';
+        var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-    for( var i=0; i < 5; i++ )
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
+        for (var i = 0; i < len; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
 
+        count += 1;
+
+    } while (fs.existsSync('packets/' + text) && count < 100);
+    
     return text;
+}
+
+//Will synchronously create the dir
+function createDirSync(filename) {
+    try {
+        var sessionId = filename.split('_')[2];
+        fs.mkdirSync('packets/' + sessionId);
+    } catch(e) {
+        if (e.code === 'EEXIST') {
+            console.err('SESSION ID was not unique!')
+        } else {
+            throw e;
+        }
+    }
 }
 
 //Entry method
@@ -28,7 +52,8 @@ function decode (msg, rinfo, filename, captureOn) {
             filename = 'rtcp_packets_' + makeid();
         }
         console.log('---Writing byte stream to: ' + filename);
-        var wstream = fs.createWriteStream('./packets/' + filename);
+        var sessionId = filename.split('_')[2];
+        var wstream = fs.createWriteStream('./packets/' + sessionId + '/' + filename);
         wstream.write(msg);
         wstream.end();
         console.log('---Done.');
@@ -577,6 +602,10 @@ var Decoder = function () {
     var sessionId = makeid();
     var captureOn = false;
 
+    this.readAvailableSessions = function() {
+
+    };
+
     this.setCapture = function(capture) {
         if (captureOn === false && capture === true) {  //reset sessionId, message count
             sessionId = makeid();
@@ -596,6 +625,9 @@ var Decoder = function () {
 
     this.decode = function(msg, rinfo) {
         var filename = 'rtcp_packets_' + sessionId + '_' + msgCount.toString() + '_' + new Date().getTime();
+        if (msgCount === 0 && captureOn) {  //only in this state create a dir for the packets
+            createDirSync(filename);
+        }
         var decoded = decode(msg, rinfo, filename, captureOn);
         msgCount++; //keeps track of number of udp received
         return decoded;

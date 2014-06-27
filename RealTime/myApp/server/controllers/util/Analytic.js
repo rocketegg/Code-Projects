@@ -421,7 +421,8 @@ function averageRollup(array) {
 				}
 				else {	//e.g. for MOS score rollup
 					stats[key] = averageRollup(array.map(function(j) { 
-						if (j[key])
+						//TODO: figure out why j is sometimes null, which crashes the server 6/27/2014
+						if (j && j[key])
 							return j[key]; 
 						else
 							return {};

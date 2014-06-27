@@ -5,7 +5,10 @@
  */
 var mongoose = require('mongoose'),
     Article = mongoose.model('Article'),
-    _ = require('lodash');
+    _ = require('lodash'),
+    temp = require('temp'),
+    fs = require('fs'),
+    officegen = require('officegen');
 
 
 /**
@@ -76,6 +79,42 @@ exports.destroy = function(req, res) {
         }
     });
 };
+
+function _file(article, type, options, callback) {
+    var string = '';
+    var out = temp.createWriteStream();
+    var docx = officegen ({
+        'type': 'docx',
+        'onend': function(written) {
+            console.log ( 'Finished creating a word file.\nTotal bytes created: ' + written + '\n' );
+        },
+        'onerr': function(err) {
+            console.log(err);
+        }
+    });
+
+    out.on('finish', function() {
+        callback(out.path); 
+        //NOTE: bug with officegen - we can only call res.download after
+        //the stream is completely done - not when onend is hit
+    });
+
+    var pObj = docx.createP();
+    pObj.addText ( article.title, { bold: true } );
+    pObj.addLineBreak();
+    pObj.addLineBreak();
+    _prepareForWord(article.content, pObj);
+    docx.generate(out);
+}
+
+exports.export = function(req, res) {
+    var article = req.article;
+    var format = 'docx';
+
+    _file(article, format, {details:true}, function(content) {
+        res.download(content, filename);
+    });
+}
 
 /**
  * Show an article

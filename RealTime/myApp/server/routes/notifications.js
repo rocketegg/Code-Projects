@@ -34,12 +34,6 @@ module.exports = function(app) {
     app.get('/notifications/sent', notifications.allsent);
     app.get('/notifications', notifications.all);
     app.post('/notifications/:notificationId/markasread', authorization.requiresLogin, canSee, notifications.markAsRead);
-    app.post('/notifications/friendrequest/:notificationId/accept', authorization.requiresLogin, canSee, notifications.acceptFriendRequest);
-    app.post('/notifications/friendrequest/:notificationId/reject', authorization.requiresLogin, canSee, notifications.rejectFriendRequest);
-    app.post('/notifications/collabrequest/:notificationId/accept', authorization.requiresLogin, canSee, notifications.acceptCollabRequest);
-    app.post('/notifications/collabrequest/:notificationId/reject', authorization.requiresLogin, canSee, notifications.rejectCollabRequest);
-    app.post('/notifications/friendrequest', authorization.requiresLogin, notifications.createFriendRequest);
-    app.post('/notifications/collabrequest', authorization.requiresLogin, notifications.createCollabRequest);
 
     app.post('/notifications', authorization.requiresLogin, notifications.create);
     app.get('/notifications/:notificationId', notifications.show);
@@ -48,7 +42,5 @@ module.exports = function(app) {
 
     // Finish with setting up the notificationId param
     app.param('notificationId', notifications.notification);
-
-    app.get('/users', notifications.getusers);
 
 };
