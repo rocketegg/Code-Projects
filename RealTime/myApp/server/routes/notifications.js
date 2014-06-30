@@ -13,15 +13,6 @@ var hasAuthorization = function(req, res, next) {
     next();
 };
 
-//Only FRs and CRs are deletable (general messages are not so users can continue to see them)
-var isDeleteable = function(req, res, next) {
-    if (req.notification.type == 'friendrequest' || req.notification.type == 'collabrequest') {
-        next();
-    } else {
-        return res.send(200);
-    }
-}
-
 var canSee = function(req, res, next) {
     //should be TO:[] or FROM:[] contains user or user is the creator
     if (req.notification.to.indexOf(req.user._id) > -1) {
@@ -38,7 +29,7 @@ module.exports = function(app) {
     app.post('/notifications', authorization.requiresLogin, notifications.create);
     app.get('/notifications/:notificationId', notifications.show);
     //app.put('/notifications/:notificationId', authorization.requiresLogin, hasAuthorization, notifications.update);
-    app.del('/notifications/:notificationId', authorization.requiresLogin, hasAuthorization, isDeleteable, notifications.destroy);
+    app.del('/notifications/:notificationId', authorization.requiresLogin, hasAuthorization, notifications.destroy);
 
     // Finish with setting up the notificationId param
     app.param('notificationId', notifications.notification);

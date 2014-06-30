@@ -54,6 +54,7 @@ angular.module('mean.articles').controller('ArticlesController', ['$scope', '$st
         Articles.get({
             articleId: $stateParams.articleId
         }, function(article) {
+            $scope.orightml = article.content;
             $scope.article = article;
         });
     };
