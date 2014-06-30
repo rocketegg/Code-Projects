@@ -109,9 +109,9 @@ function computeMOS (averages, codec) {
 	var MOS = convertMOS(RFactor);
 
 	//CORRECTED MOS here
-	var IeEff_corrected = getIeEff(averages, codec, true);
-	var RFactor_corrected = R0 - Is - Idd - IeEff_corrected;
-	var MOS_corrected = convertMOS(RFactor_corrected);
+	//var IeEff_corrected = getIeEff(averages, codec, true);
+	var correction_factor = getCorrectedPPl(computePpl(averages), codec);
+	var MOS_corrected = MOS - correction_factor;
 
 	//IDD Mapping functions
 	//var Idd_mapped = getIdd_custom(qosCache, key, averages, packetArray)
@@ -127,12 +127,17 @@ function computeMOS (averages, codec) {
 	}
 }
 
+function computePpl(averages) {
+	var Ppl = (averages.rtp_loss_total + averages.rtp_ooo_total) / averages.rtp_packet_total * 100;
+	return Ppl;
+}
+
 //Corrected: will correct based on corrected E-model which tries to approximate PESQ
 //In general: IeEff = Ie + (95 - Ie) * Ppl / (Ppl / BurstR + Bpl)
-function getIeEff(averages, codec, corrected) {
+function getIeEff(averages, codec) {
 	
-	var Ppl = (averages.rtp_loss_total + averages.rtp_ooo_total) / averages.rtp_packet_total * 100;
-	Ppl = (corrected === true) ? getCorrectedPPl(Ppl, codec) : Ppl;
+	var Ppl = computePpl(averages);
+	//Ppl = (corrected === true) ? getCorrectedPPl(Ppl, codec) : Ppl;
 
 	var Bpl = rfactor_constants.codec[codec] ? rfactor_constants.codec[codec].bpl : undefined;
 	var Ie = rfactor_constants.codec[codec] ? rfactor_constants.codec[codec].ie : undefined;
@@ -314,16 +319,17 @@ var correction_coefficients = {
 	}
 };
 
+//TODO FIX THIS
 function getCorrectedPPl(ppl, codec) {
 	if (!correction_coefficients[codec]) {
-		return ppl;
+		return 0;
 	} else {
-		var MOSppl = 4.07378 + (0.17635 * ppl) + (0.00380 * ppl * ppl);	
+		//var MOSppl = 4.07378 + (0.17635 * ppl) + (0.00380 * ppl * ppl);	
 		var a = correction_coefficients[codec].a;
 		var b = correction_coefficients[codec].b * Math.pow((ppl - correction_coefficients[codec].c), 2) - correction_coefficients[codec].d;
 		var c = ppl * correction_coefficients[codec].e;
-		var MOSppl_ = MOSppl - (a + b + c);
-		return MOSppl_;
+		var correction_Factor = (a + b + c);
+		return correction_Factor;
 	}
 }
 
