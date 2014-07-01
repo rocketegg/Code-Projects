@@ -12,7 +12,8 @@ var mongoose = require('mongoose'),
     Cache = require('./util/Cache.js'),
     fs = require('fs'),
     util = require('util'),
-    Decoder = require('./decoder.js');
+    Decoder = require('./decoder.js'),
+    PacketWriter = require('./util/PacketWriter.js');
 
 
 /**
@@ -219,7 +220,7 @@ exports.slice = function(req, res) {
 
 //Turns packet capture on
 exports.capturestatus = function(req, res) {
-    var _instance = Decoder();
+    var _instance = PacketWriter();
 
     res.send(200, { 
         status: _instance.getCapture()
@@ -229,7 +230,7 @@ exports.capturestatus = function(req, res) {
 
 //Turns packet capture on
 exports.captureon = function(req, res) {
-    var _instance = Decoder();
+    var _instance = PacketWriter();
     _instance.setCapture(true);
 
     res.send(200, {
@@ -239,7 +240,7 @@ exports.captureon = function(req, res) {
 
 //Turns packet capture off
 exports.captureoff = function(req, res) {
-    var _instance = Decoder();
+    var _instance = PacketWriter();
     _instance.setCapture(false);
 
     res.send(200, {

@@ -115,6 +115,60 @@ If you are using node instead of grunt, it is very similar:
   * [The AngularJs Controller](public/articles/controllers/articles.js) - Where we take care of  our frontend logic.
   * [The AngularJs Views Folder](public/articles/views) - Where we keep our CRUD views.
 
+## RTCP CP SETUP
+
+You need to follow these steps to get the RTCP CP running on your local machine.
+
+Prerequisites:
+  - Follow the above instructions to install node/npm, grunt, and mongoDB on your local machine.  
+
+1) After downloading all the source code
+Jenkins build:
+Does a few things:
+1) pulls source from my git repo (either clone or pull, depending on whether repo is already cloned)
+2) runs an npm install to pull necessary packages
+3) runs a bower install to get front end dependencies
+4) copies over necessary contextual js files
+5) performs a grunt build to generate dist js/css files
+6) tars up entire dir and moves to ${WORKSPACE}
+
+SEE BELOW 
+
+Installation procedure:
+Install node.js (version 0.10.29), this should install npm (node package manager) as well
+Install mongodb (Version 2.6.x)
+Copy tar ball from /var/lib/jenkins/jobs/ucx-analytics/workspace on build machine to our UCX_ROOT dir or wherever
+Make a ucx-analytics dir (mkdir -p $UCX_ROOT/ucx-analytics) 
+Untar tar ball into ucx–analytics directory 
+cd $UCX_ROOT/ucx-analytics
+Run the server as daemon process using pm2
+node node_modules/pm2/bin/pm2 start pm2processes.json
+We then point the ACM to the node server (IP/port)
+To shutdown RTCPCP:
+1. In $UCX_ROOT/ucx-analytics, run 
+$ node node_modules/pm2/bin/pm2 [stop/delete] pm2processes.json  (I usually use delete because stop seems finicky…)
+
+This by default runs in production mode (which serves up $UCX_ROOT/ucx-analytics/public/build/*)
+
+2. Dev mode can be run by running: 
+$ node node_modules/grunt-cli/bin/grunt --force
+
+To confirm whether running on build machine:
+1. To list pm2 daemon processes
+$ node node_modules/pm2/bin/pm2 list
+2. To tail logs
+$ node node_modules/pm2/bin/pm2 logs
+3. URL
+$ http://scla-cent-build-02.clarussystems.com:3000/
+
+To configure node server, edit:
+> PORT – server/config/env/all.js
+> listening port – requires code change @ server.js (search for ‘5005')
+> dev – server/config/env/development.js
+> prod – server/config/env/production.js
+
+
+
 ## Heroku Quick Deployment
 Before you start make sure you have <a href="https://toolbelt.heroku.com/">heroku toolbelt</a> installed and an accessible mongo db instance - you can try <a href="http://www.mongohq.com/">mongohq</a> which has an easy setup.
 
