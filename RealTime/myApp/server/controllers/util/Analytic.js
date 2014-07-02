@@ -123,8 +123,7 @@ function computeMOS (averages, codec) {
 		IeEff: IeEff,
 		RFactor: RFactor,
 		MOS: MOS,
-		MOS_corrected: MOS_corrected,
-		correction_factor: correction_factor
+		MOS_corrected: MOS_corrected
 	}
 }
 
@@ -330,6 +329,7 @@ function getCorrectedPPl(ppl, codec) {
 		var b = correction_coefficients[codec].b * Math.pow((ppl - correction_coefficients[codec].c), 2) - correction_coefficients[codec].d;
 		var c = ppl * correction_coefficients[codec].e;
 		var correction_Factor = (a + b + c);
+		console.log('Correction Factor: ' + correction_Factor);
 		return correction_Factor;
 	}
 }
