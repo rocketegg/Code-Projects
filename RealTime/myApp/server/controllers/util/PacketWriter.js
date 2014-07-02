@@ -52,6 +52,25 @@ var PacketWriter = function () {
         }
     }
 
+    function readSessionsSync() {
+        try {
+            var files = fs.readdirSync('packets/');
+            var dirs = [];
+            for (var i = 0; i < files.length; i++) {
+                if (fs.statSync('packets/' + files[i]).isDirectory()) {
+                    var f = fs.readdirSync('packets/' + files[i]);
+                    dirs.push({
+                        sessionId: files[i].toString(),
+                        count: f.length
+                    });
+                }
+            }
+            return dirs;
+        } catch(e) {
+            throw e;
+        }
+    }
+
     function writeToFile(msg, filename) {
         if (!filename) {
             filename = 'rtcp_packets_' + makeid();
@@ -83,8 +102,13 @@ var PacketWriter = function () {
             sessionId: sessionId,
             captureOn: captureOn,
             msgCount: msgCount,
-            writeMap: writeMap
+            writeMap: writeMap,
+            availableSessions: readSessionsSync()
         }
+    };
+
+    this.downloadCapture = function(sessionId) {
+
     };
 
     this.write = function(msg, rinfo) {

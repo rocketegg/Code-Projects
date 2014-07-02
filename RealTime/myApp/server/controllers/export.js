@@ -7,7 +7,12 @@ var mongoose = require('mongoose'),
     Device = mongoose.model('Device'),
     json2csv = require('json2csv'),
     fs = require('fs'),
-    _ = require('lodash');
+    _ = require('lodash'),
+    tar = require('tar'),
+    fstream = require('fstream'),
+    temp = require('temp');
+
+temp.track();
 
 //Export all packet data for a call
 exports.exportcall = function(req, res) {
@@ -57,7 +62,32 @@ exports.exportdevice = function(req, res) {
 
 //Exports packets given a query
 exports.exportpackets = function(req, res) {
+    var sessionId = req.query.sessionId;
+    if (sessionId) {
+        console.log('Beginning tarring of packets in session: %s', sessionId);
+        var tarFile = sessionId + '.tar';
+        var out = temp.createWriteStream();
+        var __dirname = 'packets/' + sessionId;
+        var reader = fstream.Reader({ 
+                path: __dirname,
+                type: 'Directory'
+            })
+            .pipe(tar.Pack({ noProprietary: true }))
+            .pipe(out);
 
+        out.on('end', function() {
+            console.log('end');
+        })
+
+        out.on('finish', function() {
+            console.log('File tar %s done creating.', tarFile);
+            res.download(out.path, tarFile);
+        });
+    } else {
+        res.send(500, {
+            err: 'No sessionId specified.'
+        });
+    }
 };
 
 //Exports data posted in the req.body
