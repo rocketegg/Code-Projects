@@ -123,7 +123,8 @@ function computeMOS (averages, codec) {
 		IeEff: IeEff,
 		RFactor: RFactor,
 		MOS: MOS,
-		MOS_corrected: MOS_corrected
+		MOS_corrected: MOS_corrected,
+		correction_factor: correction_factor
 	}
 }
 
