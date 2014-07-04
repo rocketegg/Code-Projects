@@ -22,7 +22,6 @@ angular.module('mean.auth').config(['$stateProvider', '$urlRouterProvider',
                     $timeout(function() {
                         deferred.reject();
                     }, 0);
-                    $location.url('/login');
                 }
             });
 
@@ -42,8 +41,6 @@ angular.module('mean.auth').config(['$stateProvider', '$urlRouterProvider',
                     $timeout(function() {
                         deferred.reject();
                     }, 0);
-                    $location.url('/login');
-
                 }
 
                 // Not Authenticated

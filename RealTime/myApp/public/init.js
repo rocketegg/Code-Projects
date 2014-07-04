@@ -20,29 +20,39 @@ for (var index in window.modules) {
 var modules = ['ngCookies', 'ngResource', 'ui.bootstrap', 'ui.router', 'mean.system', 'mean.articles', 'mean.auth', 'mean.notifications', 'googlechart', 'ngSanitize', 'ngSlider', 'ui.multiselect', 'ui.utils'];
 modules = modules.concat(packageModules);
 
+var ignorestates = [
+    'auth.login',
+    'auth.register'
+];
+
 // Combined modules
 angular.module('mean', modules)
 
-.run(function ($rootScope, $state, Global, $http, $timeout, $location) {
+.run(function ($rootScope, $state, Global, $http, $timeout, $location, $q) {
 	$rootScope.$on("$stateChangeStart", function(event, toState, toParams, fromState, fromParams){
-		$http.get('/loggedin').success(function(user) {
-            // Authenticated
-            if (user !== '0') {
-            	console.log("User is logged in, setting global var");
-            	$rootScope.user = user;
-                console.log(user);
-            	$rootScope.$emit('loggedin');
-                //$timeout(deferred.resolve, 0);
-            }
+        console.log(toState.name);
+        if (ignorestates.indexOf(toState.name) === -1) {
+    		$http.get('/loggedin').success(function(user) {
+                // Authenticated
+                if (user !== '0') {
+                	console.log("User is logged in, setting global var");
+                	$rootScope.user = user;
+                    console.log(user);
+                	$rootScope.$emit('loggedin');
+                }
 
-            // Not Authenticated
-            else {
-                $timeout(function() {
-                    //deferred.reject();
-                    $location.url('/login');
-                }, 0);
-                
-            }
-        });
+                // Not Authenticated
+                else {
+                    if (toState.name !== 'home') {
+                        $timeout(function() {
+                            event.preventDefault();
+                            $location.url('/login');
+                        }, 0);
+                    }
+                }
+            });
+        } else {
+
+        }
 	});
 });
