@@ -23,7 +23,7 @@ modules = modules.concat(packageModules);
 // Combined modules
 angular.module('mean', modules)
 
-.run(function ($rootScope, $state, Global, $http) {
+.run(function ($rootScope, $state, Global, $http, $timeout, $location) {
 	$rootScope.$on("$stateChangeStart", function(event, toState, toParams, fromState, fromParams){
 		$http.get('/loggedin').success(function(user) {
             // Authenticated
