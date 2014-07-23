@@ -22,6 +22,11 @@ var mongoose = require('mongoose'),
     Cache = require('./Cache.js');
 
 var ttl = 60000;    //1 minute refreshes
+
+//Thresholds for backfilling
+var threshold = {
+  backfillDevice: 60000
+};
 var DeviceCache = function (size) {
 
     if (DeviceCache.prototype._singletonInstance) {
@@ -34,10 +39,42 @@ var DeviceCache = function (size) {
     var cache = new Cache();
     
     //Public methods
+    function initializeCache(key) {
+        cache.setItem(key, {
+            statistics: {
+                lastUpdate: new Date().getTime(),
+            },
+            metadata: {
+                lastUpdate: new Date().getTime(),
+                lastBackfill: 0
+            }
+        });
+    }
 
-    //Updates device metadata with various searching
-    this.updateMetadata = function(key) {
-
+    //Updates device metadata with SDES packet if available and if necessary
+    //metadataPacket is RTCP packet type 202
+    this.updateMetadata = function(key, metadataPacket) {
+        var needToBackfill = false;//deviceCache.checkBackfill(rinfo.address);
+        if (!cache.hasKey(key)) {
+            initializeCache(key);
+        } 
+        var _device = cache.getItem(key);
+        var _timeSinceLastUpdate = new Date().getTime() - _device.metadata.lastBackfill;
+        needToBackfill = _timeSinceLastUpdate > threshold.backfillDevice;
+        console.log('[DEVICE CACHE]: Key: %s.  Time since last update: %d.  Need to backfill: ', key, _timeSinceLastUpdate, needToBackfill);
+          
+        if (needToBackfill && metadataPacket) {
+            var Device = mongoose.model('Device');
+            Device.backfillDevice({'metadata.IP_ADDRESS': key},
+                metadataPacket, function(err, device) {
+                    if (err) console.log(err);  //error backfilling device
+                    else {
+                        console.log('[DEVICE CACHE]: Device successfully backfilled: ' + key);
+                        _device.metadata.lastBackfill = _device.metadata.lastUpdate = new Date().getTime();
+                        cache.setItem(key, _device);
+                    }
+            });
+        }
     };
 
     //Updates device cache with qos values

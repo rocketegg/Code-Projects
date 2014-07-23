@@ -9,6 +9,7 @@ var mean = require('meanio'),
 	Purger = require ('./server/controllers/util/Purger.js'),
 	CronJob = require('cron').CronJob,
   DecoderCache = require('./server/controllers/util/DecoderCache.js'),
+  DeviceCache = require('./server/controllers/util/DeviceCache.js'),
   Sensor = require('./server/controllers/util/Sensor.js'),
   Cache = require('./server/controllers/util/Cache.js'),
   PacketWriter = require('./server/controllers/util/PacketWriter.js'),
@@ -49,6 +50,7 @@ var _decoderCache = new DecoderCache(12);
 var _sensor = new Sensor();
 var _callCache = new Cache();
 var _packetWriter = new PacketWriter();
+var _deviceCache = new DeviceCache();
 
 server.on('error', function (err) {
   console.log('server error:\n' + err.stack);
@@ -74,20 +76,27 @@ server.on('message', function (msg, rinfo) {
 
   //2 - track calls
   _sensor.trackCall(_decoderCache.filterAndStripByType(rinfo.address, 204, 4), decoded,
-      //This function called when call is starting or already started
+
+      //This function called when call is starting or already started, callStart is the call object
       function (err, callStart) {
         _callCache.setItem(callStart._id, callStart);
       },
 
-      //This function called when call was started and call ends
+      //This function called when call was started and call ends, callEnd is the call object
       function (err, callEnd) {
         _callCache.clearItem(callEnd._id);
-        console.log('Call ended.', callEnd._id);        
+        console.log('Call ended: ', callEnd._id);        
       }
     );
 
-  //2 - add to decoder cache
+  //3 - add to decoder cache
   _decoderCache.pushPackets(rinfo.address, decoded);
+
+  //4 - backfill device info, this should only be done every so often (202 is an SDES packet)
+  var idx = decoded.map(function(packet) { return packet.metadata.TYPE; }).indexOf(202);
+  if (idx > -1) {
+    _deviceCache.updateMetadata(rinfo.address, decoded[idx]);
+  }
 });
 
 server.on('listening', function () {

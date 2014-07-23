@@ -23,6 +23,7 @@ var DeviceSchema = new Schema({
             default: '',
             trim: true
         },
+        SDES: {},
         SSRC: [Number]   //all known SSRCs
     },
 
@@ -299,6 +300,91 @@ DeviceSchema.statics = {
                 device = new Device();
                 device.metadata.IP_ADDRESS = IP_ADDRESS;
                 device.save();
+            }
+        })
+    },
+
+    /*
+    * This function will backfill a device using data gathered by the SDES packet (202) which is sent wth
+    * 200 sender reports.  If the device is found, then the options are populated into the device (where
+    * the packet is passed in).  
+    * An SDES packet looks like this stored in the packets collection:
+        "data" : {
+        "chunks" : [
+            {
+                "sdes_items" : [
+                    {
+                        "value" : "ext4152222001@10.30.12.50:2146",
+                        "length" : 30,
+                        "type" : 1
+                    },
+                    {
+                        "value" : "4152222001",
+                        "length" : 10,
+                        "type" : 4
+                    },
+                    {
+                        "value" : "Avaya IP Telephone (ha96xxua3_1_03_S)",
+                        "length" : 37,
+                        "type" : 6
+                    }
+                ],
+                "ssrc" : 1207325079
+            }
+        ],
+        "length" : 22
+    },
+    * According to the RFC 3550, here are the subtypes of sdes items: 
+    *   1: CNAME: Canonical End-Point Identifier SDES Item
+    *   2: NAME: User Name SDES Item
+    *   3: EMAIL: Electronic Mail Address SDES Item
+    *   4: PHONE: Phone Number SDES Item
+    *   5: LOC: Geographic User Location SDES Item
+    *   6: TOOL: Application or Tool Name SDES Item
+    *   7: NOTE: Notice/Status SDES Item
+    *   8: PRIV: Private Extensions SDES Item
+    */
+    backfillDevice: function(query, _SDESpacket, callback) {
+        this.findOne(query, function(err, device) {
+            if (err) throw err;
+            if (device) {
+                if (_SDESpacket && _SDESpacket.data.chunks && _SDESpacket.data.chunks.length > 0) {
+                    if (!device.metadata.SDES) {
+                        device.metadata.SDES = {};
+                    }
+
+                    //Handle items
+                    _SDESpacket.data.chunks[0].sdes_items.forEach(function(item) {
+                        switch(item.type) {
+                            case 1:
+                                device.metadata.SDES.CNAME = item.value;
+                                break;
+                            case 2:
+                                device.metadata.SDES.NAME = item.value;
+                                break;
+                            case 3:
+                                device.metadata.SDES.EMAIL = item.value;
+                                break;
+                            case 4:
+                                device.metadata.SDES.PHONE = item.value;
+                                break;
+                            case 5:
+                                device.metadata.SDES.LOC = item.value;
+                                break;
+                            case 6:
+                                device.metadata.SDES.TOOL = item.value;
+                                break;
+                            case 7:
+                                device.metadata.SDES.NOTE = item.value;
+                                break;
+                            case 8:
+                                device.metadata.SDES.PRIV = item.value;
+                                break;
+                        }
+                    });
+
+                    device.save(callback);
+                }
             }
         })
     }
