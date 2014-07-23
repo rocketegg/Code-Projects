@@ -109,9 +109,8 @@ function computeMOS (averages, codec) {
 	var MOS = convertMOS(RFactor);
 
 	//CORRECTED MOS here
-	//var IeEff_corrected = getIeEff(averages, codec, true);
-	var correction_factor = getCorrectedPPl(computePpl(averages), codec);
-	var MOS_corrected = MOS - correction_factor;
+	//var correction_factor = getCorrectedPPl(computePpl(averages), codec);
+	//var MOS_corrected = MOS - correction_factor;
 
 	//IDD Mapping functions
 	//var Idd_mapped = getIdd_custom(qosCache, key, averages, packetArray)
@@ -123,7 +122,7 @@ function computeMOS (averages, codec) {
 		IeEff: IeEff,
 		RFactor: RFactor,
 		MOS: MOS,
-		MOS_corrected: MOS_corrected
+		//MOS_corrected: MOS_corrected
 	}
 }
 

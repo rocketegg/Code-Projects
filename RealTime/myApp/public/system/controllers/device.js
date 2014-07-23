@@ -255,6 +255,11 @@ angular.module('mean.system').controller('DeviceController',
         }
 
     }
+
+    $scope.isObject = function(input) {
+        if (typeof(input) === 'string' || typeof(input) === 'number') return false;
+        return angular.isObject(input) ? 'IsObject' : input;
+    };
 }])
 
 .filter('reverse', function() {

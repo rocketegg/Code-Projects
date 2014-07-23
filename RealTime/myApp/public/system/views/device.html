@@ -13,7 +13,9 @@
             </tr>
             <tr ng-repeat="(key,value) in device.metadata">
               <td class="bold">{{key}}</td>
-              <td>{{value}}</td>
+              <td ng-if="!isObject(value)">{{value}}</td>
+              <td ng-if="isObject(value)"><div ng-repeat="(key2, value2) in value"><span class="bold">{{key2}}: </span>{{value2}}</div></td>
+
             </tr>
           </table>
         </div>

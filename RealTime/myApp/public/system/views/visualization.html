@@ -77,9 +77,7 @@
               <td></td>
               <td><span class="bold red">Averages for</span> {{key}}    </td><td><span class="bold red">Reporting Interval: </span>{{visualizationdata[key].averages.duration}} ms</td><td><span class="bold red">CODEC:</span> {{visualizationdata[key].metadata.codec}}</td><td>
               <span class="bold red">
-              Computed MOS:</span> {{visualizationdata[key].averages.mos.MOS}} <a-percent ng-if="viz[key].results.averages.mos.MOS" numerator="visualizationdata[key].averages.mos.MOS" denominator="viz[key].results.averages.mos.MOS"></a-percent><br/>
-              <span class="bold red">
-              Corrected MOS:</span> {{visualizationdata[key].averages.mos.MOS_corrected}} <a-percent ng-if="viz[key].results.averages.mos.MOS_corrected" numerator="visualizationdata[key].averages.mos.MOS_corrected" denominator="viz[key].results.averages.mos.MOS_corrected"></a-percent>
+              Computed MOS:</span> {{visualizationdata[key].averages.mos.MOS}} <a-percent ng-if="viz[key].results.averages.mos.MOS" numerator="visualizationdata[key].averages.mos.MOS" denominator="viz[key].results.averages.mos.MOS"></a-percent>
               </td>
             </tr>
             <tr>
