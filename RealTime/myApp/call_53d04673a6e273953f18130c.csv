@@ -1,0 +1,3 @@
+"timestamp","rtp_total_packet_count","rtp_interval_packets","rtp_total_packet_loss","rtp_interval_packet_loss","rtp_total_packet_out_of_order","rtp_interval_packets_out_of_order","jitter_buffer_delay"
+"2014-07-23T23:34:16.668Z",1646,271,0,0,0,0,1
+"2014-07-23T23:34:20.922Z",1859,213,0,0,0,0,1

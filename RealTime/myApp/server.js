@@ -13,7 +13,9 @@ var mean = require('meanio'),
   Sensor = require('./server/controllers/util/Sensor.js'),
   Cache = require('./server/controllers/util/Cache.js'),
   PacketWriter = require('./server/controllers/util/PacketWriter.js'),
-  async = require('async');
+  async = require('async'),
+  net = require('net'),
+  DecoderCDR = require('./server/controllers/decoder_cdr.js');
 
 mean.app('RTCP Collector Prototype',{});
 
@@ -154,6 +156,45 @@ var purger = new CronJob({
 
 console.log('Starting up cron job to purge dead packets');
 purger.start();
+
+/*
+* Avaya CDR Server 
+* TODO: move out to separate module
+*/
+var _decoderCDR = new DecoderCDR();
+
+var _cdrServer = net.createServer(function(c) { //'connection' listener
+  console.log('CDR Server connected');
+
+  // Add a 'data' event handler to this instance of socket
+  c.on('data',function(data)  {
+    
+    console.log('[CDR] INCOMING CDR MESSAGE FROM [%s:%s] with LENGTH [%d]: ', c.remoteAddress, c.remotePort, data.length);
+    var _decodedObj = _decoderCDR.decode(data);
+    if (_decodedObj) {
+      console.log('[CDR] Received decoded message: \n');
+      console.log(_decodedObj);
+    } 
+  });
+  
+  //Add a 'close' event handler to this instance of socket
+  c.on('close',function(data) {
+    console.log('CLOSED:' +  c.remoteAddress + ' ' + c.remotePort);
+  });
+
+  c.on('end', function() {
+    console.log('CDR Server disconnected');
+  });
+
+  //c.write('hello\r\n');
+
+  //c.pipe(c);
+});
+_cdrServer.listen(5061, function() { //'listening' listener
+  console.log('Opening up CDR listener on port 5061');
+});
+
+
 
 // Initializing logger
 logger.init(app, passport, mongoose);

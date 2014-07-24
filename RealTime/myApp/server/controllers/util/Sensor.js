@@ -162,6 +162,25 @@ function updateCall(decodedPacket, cb) {
 
     var query2 = {
         $and: [{
+            'to.IP_ADDRESS': IP
+        }, {
+            'to.SSRC': fromSSRC
+        }, {
+            'from.SSRC': toSSRC
+        }, {
+            'metadata.ended.to': false
+        }, {
+            'to.highestRTP': {
+                $lt: highestRTP
+            }
+        }]
+    };    
+
+    //AMH 7/23/2014: this step only necessary for load testing
+    var query3 = {
+        $and: [{
+            'to.IP_ADDRESS': ''
+        }, {
             'to.SSRC': fromSSRC
         }, {
             'from.SSRC': toSSRC
@@ -174,23 +193,33 @@ function updateCall(decodedPacket, cb) {
         }]
     };
 
-    //1 - try finding call
-    Call.find(query1, function(err, calls) {
-        console.log(calls);
-        if (calls.length > 1) {
-            console.log('uh oh! multiple calls found');
-        } else if (calls.length === 1) {
-            console.log('[Sensor] Found existing call (query1).  Updating');
-            var call = calls[0];
-            call.endTime = decodedPacket.timestamp;
-            call.metadata.lastUpdated = new Date();
-            call.from.highestRTP = highestRTP;
+    async.waterfall([
 
-            call.save(function(err) {
-                cb(err, call);
+        //First see if there is a call object
+        function(callback) {
+            Call.find(query1, function(err, calls) {
+                console.log(calls);
+                if (calls.length > 1) {
+                    console.log('uh oh! multiple calls found');
+                } else if (calls.length === 1) {
+                    console.log('[Sensor] Found existing call (query1).  Updating');
+                    var call = calls[0];
+                    call.endTime = decodedPacket.timestamp;
+                    call.metadata.lastUpdated = new Date();
+                    call.from.highestRTP = highestRTP;
+
+                    call.save(function(err) {
+                        cb(err, call);
+                        callback("Found and updated call @ Query1");
+                    });
+                } else {
+                    callback(null);
+                }
             });
-        } else {
-            //2 - try finding call reversed
+        },
+
+        //Reverse and try again - find a matching call
+        function(callback) {
             console.log('[Sensor] No calls found.  Reversing and trying again.');
             Call.find(query2, function(err, calls) {
                 if (calls.length > 1) {
@@ -198,20 +227,84 @@ function updateCall(decodedPacket, cb) {
                 } else if (calls.length === 1) {
                     console.log('[Sensor] Found existing call (query2).  Updating');
                     var call = calls[0];
-                    call.to.IP_ADDRESS = IP;
                     call.endTime = decodedPacket.timestamp;
                     call.metadata.lastUpdated = new Date();
                     call.to.highestRTP = highestRTP;
 
                     call.save(function(err) {
                         cb(err, call);
+                        callback("Found and updated call @ Query2");
+                    });
+                } else {
+                    //
+                    callback(null);
+                }
+            });
+        },
+
+        //No matching yet with IP, so try with just swapped SSRCs and update that one
+        function(callback) {
+            Call.findOne(query3, function(err, call) {
+                console.log(call);
+                if (call) {
+                    console.log('[Sensor] Found existing call (query1).  Updating');
+                    call.to.IP_ADDRESS = IP;
+                    call.endTime = decodedPacket.timestamp;
+                    call.metadata.lastUpdated = new Date();
+                    call.from.highestRTP = highestRTP;
+
+                    call.save(function(err) {
+                        cb(err, call);
+                        callback('Found and updated call @ Query3');
                     });
                 } else {
                     pushNewCall(decodedPacket, cb);
+                    callback('No calls found.  Pushing new call.');
                 }
             });
         }
+    ], function(err, results) {
+
     });
+
+    //1 - try finding call
+    // Call.find(query1, function(err, calls) {
+    //     console.log(calls);
+    //     if (calls.length > 1) {
+    //         console.log('uh oh! multiple calls found');
+    //     } else if (calls.length === 1) {
+    //         console.log('[Sensor] Found existing call (query1).  Updating');
+    //         var call = calls[0];
+    //         call.endTime = decodedPacket.timestamp;
+    //         call.metadata.lastUpdated = new Date();
+    //         call.from.highestRTP = highestRTP;
+
+    //         call.save(function(err) {
+    //             cb(err, call);
+    //         });
+    //     } else {
+    //         //2 - try finding call reversed
+    //         console.log('[Sensor] No calls found.  Reversing and trying again.');
+    //         Call.find(query2, function(err, calls) {
+    //             if (calls.length > 1) {
+    //                 console.log('uh oh! multiple calls found');
+    //             } else if (calls.length === 1) {
+    //                 console.log('[Sensor] Found existing call (query2).  Updating');
+    //                 var call = calls[0];
+    //                 call.to.IP_ADDRESS = IP;
+    //                 call.endTime = decodedPacket.timestamp;
+    //                 call.metadata.lastUpdated = new Date();
+    //                 call.to.highestRTP = highestRTP;
+
+    //                 call.save(function(err) {
+    //                     cb(err, call);
+    //                 });
+    //             } else {
+    //                 pushNewCall(decodedPacket, cb);
+    //             }
+    //         });
+    //     }
+    // });
     return true;
 }
 

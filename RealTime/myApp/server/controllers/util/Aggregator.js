@@ -25,7 +25,7 @@ function backfillCallData(lastRun) {
     Call.find(query, function(err, calls) {
         if (err) throw err;
         if (calls.length > 0) {
-            console.log('[AGGREGATOR]: Backfilling call data for [%d] new expired calls.', calls.length);
+            //console.log('[AGGREGATOR]: Backfilling call data for [%d] new expired calls.', calls.length);
             calls.forEach(function(call) {
                 updateCallStatistics(call);
             });
@@ -45,7 +45,7 @@ function updateCallStatistics(call, cb) {
         var Call = mongoose.model('Call');
         Call.getPackets(callId, 0, function(err, packets) {
             if (err) throw err;
-            console.log('\t[AGGREGATOR] Backfilling call %s.', callId);
+            //console.log('\t[AGGREGATOR] Backfilling call %s.', callId);
             var _analytic = new Analytic();
 
             //1) Compute metrics for the newly ended call
@@ -74,7 +74,7 @@ function updateCallStatistics(call, cb) {
                         response[key] = results[i][key];
                     }
                 }
-                console.log('\t[AGGREGATOR] Saving call data for call %s.', callId);
+                //console.log('\t[AGGREGATOR] Saving call data for call %s.', callId);
                 call.metrics = {
                     from: {
                         IP_ADDRESS: call.from.IP_ADDRESS,
@@ -141,7 +141,7 @@ function updateCallStatistics(call, cb) {
 function updateStatistics(device, cb) {
     var _analytic = new Analytic();
     var currTimestamp = new Date().getTime();
-    console.log('[AGGREGATOR]: Computing metrics for device %s.', device.metadata.IP_ADDRESS);
+    //console.log('[AGGREGATOR]: Computing metrics for device %s.', device.metadata.IP_ADDRESS);
 
     //Purge all stale data
     if (device.statistics.last_hour.rollup && device.statistics.last_hour.rollup.length > 0) {
@@ -149,7 +149,7 @@ function updateStatistics(device, cb) {
         while (device.statistics.last_hour.rollup[ptr] && device.statistics.last_hour.rollup[ptr].endTime < currTimestamp - (60000 * 60)) {
             ptr++;
         }
-        console.log('\tPurging stale hourly data [%d rows] for device %s', ptr, device.metadata.IP_ADDRESS);
+        //console.log('\tPurging stale hourly data [%d rows] for device %s', ptr, device.metadata.IP_ADDRESS);
         device.statistics.last_hour.rollup.splice(0, ptr);
     }
 
@@ -170,7 +170,7 @@ function updateStatistics(device, cb) {
     }
     //the number of updates needed, adjustable based on staleness Threshold size
     var numUpdates = Math.floor((currTimestamp - startTime) / stalenessThreshold);
-    console.log('[AGGREGATOR]: Backfilling %s for past %d minutes.', device.metadata.IP_ADDRESS, numUpdates);
+    //console.log('[AGGREGATOR]: Backfilling %s for past %d minutes.', device.metadata.IP_ADDRESS, numUpdates);
 
     var Packet = mongoose.model('Packet');
 
@@ -250,7 +250,7 @@ var Aggregator = function () {
             Device.find({}, function(err, devices) {
                 devices.forEach(function(device) {
                     if (!device.statistics.last_updated || (new Date().getTime() - device.statistics.last_updated.getTime() > stalenessThreshold) || device.statistics.last_updated.getTime() > new Date().getTime()) {
-                        console.log('[AGGREGATOR]: Updating statistics for device %s.', device.metadata.IP_ADDRESS);
+                        //console.log('[AGGREGATOR]: Updating statistics for device %s.', device.metadata.IP_ADDRESS);
                         updateStatistics(device, cb);
                     } else {
                         //console.log(device.statistics.last_updated);
