@@ -18,7 +18,7 @@ function decode (msg, rinfo) {
         console.log('[DECODE]: Decoding udp message with timestamp: %s.', timestamp);
         var decoded = [];   //This code currently runs synchronously, pushing each decoded packet on the array, which is returned
         decode_packets(msg, rinfo, 0, timestamp, decoded);
-        return decoded;
+        return decoded; dec
     } catch (err) {
         throw err;
     }

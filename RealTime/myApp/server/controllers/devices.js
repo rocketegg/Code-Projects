@@ -36,9 +36,17 @@ exports.device = function(req, res, next, id) {
     });
 };
 
-exports.findbyip = function(req, res) {
-	var deviceIP = req.query.IP_ADDRESS;
-	Device.loadByIP(deviceIP, function(err, device) {
+exports.find = function(req, res) {
+    var query = {}; //constructed query to match params
+	if (req.query.IP_ADDRESS) {
+        query['metadata.IP_ADDRESS'] = req.query.IP_ADDRESS;
+    }
+
+    if (req.query.EXT) {
+        query['metadata.SDES.PHONE'] = { $regex: '.*' + req.query.EXT + '.*'}
+    }
+
+	Device.find(deviceIP, function(err, device) {
         if (err) {
             res.send(500, {
                 error: err

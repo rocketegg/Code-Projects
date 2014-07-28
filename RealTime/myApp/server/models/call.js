@@ -66,6 +66,10 @@ var CallSchema = new Schema({
         },
         highestRTP: {   //highest RTP packet # received on FROM end
             type: Number
+        },
+        device: {
+            type: Schema.ObjectId,
+            ref: 'Device'
         }
     },
     to: {
@@ -88,6 +92,10 @@ var CallSchema = new Schema({
         highestRTP: {   //highest RTP packet # received on TO end
             type: Number,
             default: 0
+        },
+        device: {
+            type: Schema.ObjectId,
+            ref: 'Device'
         }
     }
 
@@ -111,15 +119,15 @@ CallSchema.statics = {
         }).exec(cb);
     },
 
-    loadAllCallsFromIP: function(deviceIP, cb) {
+    loadAllCallsFromDevice: function(deviceId, cb) {
         this.find({
-            'from.IP_ADDRESS': deviceIP
+            'from.device': deviceId
         }).select('-metrics.from.intervals').exec(cb);
     },
 
-    loadAllCallsToIP: function(deviceIP, cb) {
+    loadAllCallsToDevice: function(deviceId, cb) {
         this.find({
-            'to.IP_ADDRESS': deviceIP
+            'to.device': deviceId
         }).select('-metrics.from.intervals').exec(cb);
     },
 

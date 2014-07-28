@@ -240,21 +240,28 @@ var Aggregator = function () {
             var _filterer = new Filterer();
             var lastRun = new Date().getTime() - 5000;
             //console.log('[AGGREGATOR] Aggregating results @ [%s]', new Date());
-            _filterer.query(lastRun);
+
+            //***AMH*** Turning of filtration 7/25/2014
+            //_filterer.query(lastRun);
             backfillCallData(lastRun);
         },
 
         //Updates all devices in devices collection, if no devices, does nothing
         updateStatistics: function(deviceIP, cb) {
             var Device = mongoose.model('Device');
-            Device.find({}, function(err, devices) {
+            var timeToUpdate = new Date().getTime();
+            Device.find({
+                $or: [  { 'statistics.last_updated': { $lt: timeToUpdate - stalenessThreshold }
+                    },  { 'statistics.last_updated': { $gt: timeToUpdate}  //upon initialization -- maybe
+                    }]  
+            }, function(err, devices) {
                 devices.forEach(function(device) {
                     if (!device.statistics.last_updated || (new Date().getTime() - device.statistics.last_updated.getTime() > stalenessThreshold) || device.statistics.last_updated.getTime() > new Date().getTime()) {
-                        //console.log('[AGGREGATOR]: Updating statistics for device %s.', device.metadata.IP_ADDRESS);
+                        console.log('[AGGREGATOR]: Updating statistics for device %s.', device.metadata.IP_ADDRESS);
                         updateStatistics(device, cb);
                     } else {
                         //console.log(device.statistics.last_updated);
-                        //console.log('[AGGREGATOR]: Device %s is up to date.', device.metadata.IP_ADDRESS);
+                        console.log('[AGGREGATOR]: Device %s is up to date.', device.metadata.IP_ADDRESS);
                         if (cb)
                             cb(undefined, {});
                     }

@@ -147,7 +147,7 @@ var purger = new CronJob({
   cronTime: '0 * * * * *',
   //Runs every minute
   onTick: function() {
-  	_purger.purge();
+  	//_purger.purge();
     _purger.expireCalls();
   },
   start: false,

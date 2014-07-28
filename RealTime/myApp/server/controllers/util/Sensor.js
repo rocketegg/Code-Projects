@@ -139,6 +139,7 @@ function updateCall(decodedPacket, cb) {
     //find existing call, update, then return
     //if no existing call found, create new call
     var Call = mongoose.model('Call');
+    var Device = mongoose.model('Device');
     var IP = decodedPacket.device.IP_ADDRESS;
     var fromSSRC = decodedPacket.data.ssrc;
     var toSSRC = decodedPacket.data.ssrc_inc_rtp_stream;
@@ -208,10 +209,26 @@ function updateCall(decodedPacket, cb) {
                     call.metadata.lastUpdated = new Date();
                     call.from.highestRTP = highestRTP;
 
-                    call.save(function(err) {
-                        cb(err, call);
-                        callback("Found and updated call @ Query1");
-                    });
+                    //backfill call with deviceId
+                    if (call.from.IP_ADDRESS && !call.from.device) {
+                        Device.loadByIP(call.from.IP_ADDRESS, function(err, device) {
+                            if (err) throw err;
+                            if (device) {
+                                call.from.device = device._id;    
+                            }
+                            call.save(function(err) {
+                                cb(err, call);
+                                callback("Found and updated call @ Query1");
+                            });
+                        });
+                    } else {
+                        call.save(function(err) {
+                            cb(err, call);
+                            callback("Found and updated call @ Query1");
+                        });
+                    }
+
+
                 } else {
                     callback(null);
                 }
@@ -230,6 +247,24 @@ function updateCall(decodedPacket, cb) {
                     call.endTime = decodedPacket.timestamp;
                     call.metadata.lastUpdated = new Date();
                     call.to.highestRTP = highestRTP;
+
+                    if (call.to.IP_ADDRESS && !call.to.device) {
+                        Device.loadByIP(call.to.IP_ADDRESS, function(err, device) {
+                            if (err) throw err;
+                            if (device) {
+                                call.to.device = device._id;
+                            }
+                            call.save(function(err) {
+                                cb(err, call);
+                                callback("Found and updated call @ Query2");
+                            });
+                        });
+                    } else {
+                        call.save(function(err) {
+                            cb(err, call);
+                            callback("Found and updated call @ Query2");
+                        });
+                    }
 
                     call.save(function(err) {
                         cb(err, call);

@@ -12,7 +12,7 @@ module.exports = function(app) {
 	//basically an aggregate of the summary and analytics/qos REST calls
 	app.get('/device/find/snapshot', devices.snapshot);
 
-	app.get('/device/find', devices.findbyip);
+	app.get('/device/find', devices.find);
     app.get('/device/all', devices.all);
     app.get('/device/:deviceId', devices.show);
     // Finish with setting up the articleId param

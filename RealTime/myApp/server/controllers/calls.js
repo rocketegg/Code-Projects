@@ -54,39 +54,65 @@ exports.all = function(req, res) {
 
 exports.callsfordevice = function(req, res) {
     //async
-    var deviceIP = req.query.IP_ADDRESS;
-    if (deviceIP) {
-        async.parallel([
-            function(callback) {
-                Call.loadAllCallsFromIP(deviceIP, function(err, results) {
-                    callback(err, {
-                        'from': results
-                    })
-                });
-            },
+    if (!req.query.IP_ADDRESS && !req.query.EXT) {
+        return res.send(200, 'No device found');
+    } else {
 
-            function(callback) {
-                Call.loadAllCallsToIP(deviceIP, function(err, results) {
-                    callback(err, {
-                        'to': results
-                    })
-                });
-            }
-        ], function(err, results) {
+        var Device = mongoose.model('Device');
+        var query = {}; //constructed query to match params
+        if (req.query.IP_ADDRESS) {
+            query['metadata.IP_ADDRESS'] = req.query.IP_ADDRESS;
+        }
+
+        if (req.query.EXT) {
+            query['metadata.SDES.PHONE'] = { $regex: '.*' + req.query.EXT + '.*'}
+        }
+
+        Device.findOne(query, function(err, device) {
             if (err) {
                 res.send(500, {
                     error: err
                 });
-            } else {
-                var response = {};
-                for (var i = 0; i < results.length; i++) {
-                    for (var key in results[i]) {
-                        response[key] = results[i][key];
-                    }
-                }
-                res.jsonp(response);
             } 
+            if (!device) {
+                res.send(200, 'No device found');
+            } else {
+                var deviceId = device._id;
+                if (deviceId) {
+                    async.parallel([
+                        function(callback) {
+                            Call.loadAllCallsFromDevice(deviceId, function(err, results) {
+                                callback(err, {
+                                    'from': results
+                                })
+                            });
+                        },
 
+                        function(callback) {
+                            Call.loadAllCallsToDevice(deviceId, function(err, results) {
+                                callback(err, {
+                                    'to': results
+                                })
+                            });
+                        }
+                    ], function(err, results) {
+                        if (err) {
+                            res.send(500, {
+                                error: err
+                            });
+                        } else {
+                            var response = {};
+                            for (var i = 0; i < results.length; i++) {
+                                for (var key in results[i]) {
+                                    response[key] = results[i][key];
+                                }
+                            }
+                            res.jsonp(response);
+                        } 
+
+                    });
+                }
+            }
         });
     }
 };
