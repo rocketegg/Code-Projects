@@ -1,6 +1,7 @@
 'use strict';
 
-var mean = require('meanio');
+var mean = require('meanio'),
+	build = require('../config/system/build.js');
 
 exports.render = function(req, res) {
 
@@ -23,4 +24,8 @@ exports.render = function(req, res) {
 		roles: req.user ? JSON.stringify(req.user.roles) : JSON.stringify(['annonymous']),
 		modules: JSON.stringify(modules)
 	});
+};
+
+exports.version = function(req, res) {
+	res.send(200, build.buildinfo);
 };
