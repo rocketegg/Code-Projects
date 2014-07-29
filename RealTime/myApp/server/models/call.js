@@ -101,6 +101,12 @@ var CallSchema = new Schema({
 
 });
 
+//Indexes
+
+CallSchema.index({ 'to.SSRC': 1, 'from.SSRC': 1});
+CallSchema.index({ 'from.device': 1 });
+CallSchema.index({ 'to.device': 1 });
+
 CallSchema.post('init', function() {
     this._original = this.toObject();
 });

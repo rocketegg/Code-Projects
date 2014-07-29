@@ -374,6 +374,13 @@ var PacketSchema = new Schema({
 });
 
 
+/*
+* Indexes
+*/
+PacketSchema.index({ 'device.IP_ADDRESS': 1, 'metadata.TYPE': 1, 'data.subtype': 1});
+PacketSchema.index({ 'device.timestamp': 1});
+
+
 /**
  * Statics
  */
@@ -397,6 +404,8 @@ PacketSchema.statics = {
 
   //deviceIP is a string IP
   //startTime & endTime is a string (unix date in ms) or a date object
+  //Create compound index in MONGO
+  //db.packets.ensureIndex({'device.IP_ADDRESS':1, 'metadata.TYPE':1, 'data.subtype':1})
   sliceByIP: function(deviceIP, startTime, endTime, cb) {
         //makes this function a little more robust
         if (startTime instanceof Date) {
