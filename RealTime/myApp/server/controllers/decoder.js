@@ -206,13 +206,13 @@ function decode_203(msg, offset) {
         var ssrc_offset = offset + (4 * (i + 1));
         data.ssrc.push(msg.readUInt32BE(ssrc_offset));
     }
-    console.log(data);
+    //console.log(data);
     //extra optional reason included
     if (data.length > data.src_count) {
         var len_start = offset + 4 + (data.src_count * 4);
-        console.log('len start: ' + len_start);
+        //console.log('len start: ' + len_start);
         var reason_length = msg.readUInt8(len_start);
-        console.log('reason length: ' + reason_length);
+        //console.log('reason length: ' + reason_length);
         data.bye_reason = msg.toString('utf8', len_start + 1, len_start + 1 + reason_length);
     } else {
         data.bye_reason = '';
@@ -469,7 +469,7 @@ function decode_204(msg, offset) {
     } else if (data.name === '-AV-' && data.subtype === 5) {
         data.ssrc_inc_rtp_stream = msg.readUInt32BE(offset + 12);
         data.metric_mask = msg.readUInt32BE(offset + 16);
-        console.log('metric mask for 204 subtype 5: ', data.metric_mask.toString(2));
+        //console.log('metric mask for 204 subtype 5: ', data.metric_mask.toString(2));
         data.routing = {
             avaya: {}
         };

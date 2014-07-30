@@ -245,26 +245,48 @@ var Aggregator = function () {
         },
 
         //Updates all devices in devices collection, if no devices, does nothing
-        updateStatistics: function(deviceIP, cb) {
+        updateStatistics: function(deviceId, updateStatisticsPace, cb) {
+            //console.log('[Aggregator.js] - updateStatistics() running @ %s', new Date());
             var Device = mongoose.model('Device');
-            var timeToUpdate = new Date().getTime();
-            Device.find({
-                $or: [  { 'statistics.last_updated': { $lt: timeToUpdate - stalenessThreshold }
-                    },  { 'statistics.last_updated': { $gt: timeToUpdate}  //upon initialization -- maybe
-                    }]  
-            }, function(err, devices) {
-                devices.forEach(function(device) {
-                    if (!device.statistics.last_updated || (new Date().getTime() - device.statistics.last_updated.getTime() > stalenessThreshold) || device.statistics.last_updated.getTime() > new Date().getTime()) {
-                        console.log('[AGGREGATOR]: Updating statistics for device %s.', device.metadata.IP_ADDRESS);
+            if (deviceId) {
+                Device.findOne({
+                    _id: deviceId
+                }, function(err, device) {
+                    if (err) throw err;
+                    if (device) {
                         updateStatistics(device, cb);
-                    } else {
-                        //console.log(device.statistics.last_updated);
-                        console.log('[AGGREGATOR]: Device %s is up to date.', device.metadata.IP_ADDRESS);
-                        if (cb)
-                            cb(undefined, {});
                     }
                 });
-            });
+            } else {
+                var timeToUpdate = new Date().getTime();
+                Device.find({
+                    $or: [  { 'statistics.last_updated': { $lt: timeToUpdate - stalenessThreshold }
+                        },  { 'statistics.last_updated': { $gt: timeToUpdate}  //upon initialization -- maybe
+                        },  { 'statistics.last_updated': null
+                        }]  
+                }).sort({'statistics.last_updated': 1}).limit(updateStatisticsPace).exec(function(err, devices) {    //implement pacing
+                    var numUpdates = devices.length;
+                    var first = numUpdates > 0 ? (devices[0].statistics ? devices[0].statistics.last_updated : 'Never updated') : 'N/A - no devices found';
+                    var last = numUpdates > 0 ? (devices[numUpdates - 1].statistics ? devices[numUpdates - 1].statistics.last_updated : 'Never updated') : 'N/A - no devices found'
+                    console.log('[AGGREGATOR]: Updating statistics for [%d] devices.  Update Range: %s to %s', devices.length, first, last);
+
+                    var startTime = new Date().getTime();
+                    var counter = numUpdates;
+                    devices.forEach(function(device) {
+                        updateStatistics(device, function() {
+                            counter--;
+                            if (counter === 0) {
+                                var endTime = new Date().getTime();
+                                cb({
+                                    updated: numUpdates,
+                                    duration: endTime - startTime,
+                                    average: (endTime - startTime) / numUpdates
+                                });
+                            }
+                        });
+                    });
+                });
+            }
         },
 
         //updates the call metrics for a call

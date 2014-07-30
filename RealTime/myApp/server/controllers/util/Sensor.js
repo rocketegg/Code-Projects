@@ -135,6 +135,94 @@ function endCall(decoded, cb) {
     }
 }
 
+//This function loads all active calls from mongoDB and relies on node to filter through them
+//This offloads some of the processing to Node and takes some pressure off mongoDB
+function updateCall2(decodedPacket, cb) {
+    var Call = mongoose.model('Call');
+    var Device = mongoose.model('Device');
+    var IP = decodedPacket.device.IP_ADDRESS;
+    var fromSSRC = decodedPacket.data.ssrc;
+    var toSSRC = decodedPacket.data.ssrc_inc_rtp_stream;
+    var highestRTP = decodedPacket.data.qos.avaya.MID_RTP_PACKET_COUNT;
+
+    Call.loadActiveCalls(function(err, calls) {
+        if (err) throw err;
+
+        var updated = false;
+        for (var i = 0; i < calls.length; i++) {
+            //Try query 1
+            var call = calls[i];
+            if (call.from.IP_ADDRESS === IP && call.from.SSRC === fromSSRC && call.to.SSRC === toSSRC && call.from.highestRTP < highestRTP) {
+                console.log('[Sensor] Found existing call (query1).  Updating');
+                call.endTime = decodedPacket.timestamp;
+                call.metadata.lastUpdated = new Date();
+                call.from.highestRTP = highestRTP;
+
+                //backfill call with deviceId
+                if (call.from.IP_ADDRESS && !call.from.device) {
+                    Device.loadByIP(call.from.IP_ADDRESS, function(err, device) {
+                        if (err) throw err;
+                        if (device) {
+                            call.from.device = device._id;    
+                        }
+                        call.save(function(err) {
+                            cb(err, call);
+                        });
+                    });
+                } else {
+                    call.save(function(err) {
+                        cb(err, call);
+                    });
+                }
+                updated = true;
+                break;
+            } else if (call.to.IP_ADDRESS === IP && call.to.SSRC === fromSSRC && call.from.SSRC === toSSRC && call.to.highestRTP < highestRTP) {
+                console.log('[Sensor] Found existing call (query2).  Updating');
+                var call = calls[0];
+                call.endTime = decodedPacket.timestamp;
+                call.metadata.lastUpdated = new Date();
+                call.to.highestRTP = highestRTP;
+
+                if (call.to.IP_ADDRESS && !call.to.device) {
+                    Device.loadByIP(call.to.IP_ADDRESS, function(err, device) {
+                        if (err) throw err;
+                        if (device) {
+                            call.to.device = device._id;
+                        }
+                        call.save(function(err) {
+                            cb(err, call);
+                        });
+                    });
+                } else {
+                    call.save(function(err) {
+                        cb(err, call);
+                    });
+                }
+                updated = true;
+                break;
+            } else if (call.to.IP_ADDRESS === '' && call.to.SSRC === fromSSRC && call.from.SSRC === toSSRC && call.to.highestRTP < highestRTP) {
+                console.log('[Sensor] Found existing call (query3).  Updating');
+                call.to.IP_ADDRESS = IP;
+                call.endTime = decodedPacket.timestamp;
+                call.metadata.lastUpdated = new Date();
+                call.from.highestRTP = highestRTP;
+
+                call.save(function(err) {
+                    cb(err, call);
+                });
+                updated = true;
+                break;
+            } 
+        }
+
+        //if we loop through entire array without finding a matching call
+        if (!updated) {
+            console.log('[Sensor] Did not find any matching calls, pushing new call.');
+            pushNewCall(decodedPacket, cb);     
+        }
+    });
+}
+
 function updateCall(decodedPacket, cb) {
     //find existing call, update, then return
     //if no existing call found, create new call
@@ -147,13 +235,13 @@ function updateCall(decodedPacket, cb) {
 
     var query1 = {
         $and: [{
-            'from.IP_ADDRESS': IP
-        }, {
             'from.SSRC': fromSSRC
         }, {
             'to.SSRC': toSSRC
         }, {
             'metadata.ended.from': false
+        }, {
+            'from.IP_ADDRESS': IP
         }, {
             'from.highestRTP': {
                 $lt: highestRTP
@@ -163,13 +251,13 @@ function updateCall(decodedPacket, cb) {
 
     var query2 = {
         $and: [{
-            'to.IP_ADDRESS': IP
-        }, {
             'to.SSRC': fromSSRC
         }, {
             'from.SSRC': toSSRC
         }, {
             'metadata.ended.to': false
+        }, {
+            'to.IP_ADDRESS': IP
         }, {
             'to.highestRTP': {
                 $lt: highestRTP
@@ -180,13 +268,13 @@ function updateCall(decodedPacket, cb) {
     //AMH 7/23/2014: this step only necessary for load testing
     var query3 = {
         $and: [{
-            'to.IP_ADDRESS': ''
-        }, {
             'to.SSRC': fromSSRC
         }, {
             'from.SSRC': toSSRC
         }, {
             'metadata.ended.to': false
+        }, {
+            'to.IP_ADDRESS': ''
         }, {
             'to.highestRTP': {
                 $lt: highestRTP
@@ -265,11 +353,6 @@ function updateCall(decodedPacket, cb) {
                             callback("Found and updated call @ Query2");
                         });
                     }
-
-                    call.save(function(err) {
-                        cb(err, call);
-                        callback("Found and updated call @ Query2");
-                    });
                 } else {
                     //
                     callback(null);

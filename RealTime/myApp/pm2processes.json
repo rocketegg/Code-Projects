@@ -2,7 +2,7 @@
   "name"        : "main server",
   "script"      : "server.js",
   "args"        : "['']",
-  "instances"   : "1",
+  "instances"   : "max",
   "exec_mode"   : "cluster",
   "ignoreWatch" : ["[\\/\\\\]\\./", "node_modules", "public/system/lib", "packets"],
   "watch"       : "true",

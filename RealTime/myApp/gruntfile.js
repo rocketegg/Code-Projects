@@ -85,9 +85,17 @@ module.exports = function(grunt) {
             }
         },
         concurrent: {
-            tasks: ['nodemon', 'watch'],
-            options: {
-                logConcurrentOutput: true
+            prod: {
+                tasks: ['nodemon', 'watch'],
+                options: {
+                    logConcurrentOutput: true
+                }
+            },
+            dev: {
+                tasks: ['nodemon', 'watch'],
+                options: {
+                    logConcurrentOutput: true
+                }
             }
         },
         mochaTest: {
@@ -106,11 +114,15 @@ module.exports = function(grunt) {
             unit: {
                 configFile: 'test/karma/karma.conf.js'
             }
+        },
+        'node-inspector': {
+            dev: {}
         }
     });
 
     //Load NPM tasks
     require('load-grunt-tasks')(grunt);
+    grunt.loadNpmTasks('grunt-node-inspector');
 
     //Making grunt default to force in order not to break the project.
     grunt.option('force', true);
@@ -119,7 +131,7 @@ module.exports = function(grunt) {
     if (process.env.NODE_ENV === 'production') {
         grunt.registerTask('default', ['cssmin', 'uglify', 'concurrent']);
     } else {
-        grunt.registerTask('default', ['jshint', 'csslint', 'concurrent']);
+        grunt.registerTask('default', ['jshint', 'csslint', 'concurrent:dev']);
     }
 
     grunt.registerTask('build', ['cssmin', 'uglify']);

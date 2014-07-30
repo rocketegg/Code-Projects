@@ -1,4 +1,6 @@
 'use strict';
+
+
 /**
  *  Mean container for dependency injection
  */
@@ -19,6 +21,7 @@ var mean = require('meanio'),
 
 mean.app('RTCP Collector Prototype',{});
 
+//require('look').start();
 /**
  * Module dependencies.
  */
@@ -53,6 +56,9 @@ var _sensor = new Sensor();
 var _callCache = new Cache();
 var _packetWriter = new PacketWriter();
 var _deviceCache = new DeviceCache();
+var profiler = require('v8-profiler');
+
+
 
 server.on('error', function (err) {
   console.log('server error:\n' + err.stack);
@@ -77,6 +83,7 @@ server.on('message', function (msg, rinfo) {
   }
 
   //2 - track calls
+
   _sensor.trackCall(_decoderCache.filterAndStripByType(rinfo.address, 204, 4), decoded,
 
       //This function called when call is starting or already started, callStart is the call object
@@ -127,11 +134,38 @@ var aggregator = new CronJob({
 console.log('Starting up cron job to aggregate packets packets');
 aggregator.start();
 
+var updateStatisticsPace = 50;
+var updateStatisticsPace_min = 10;
 var deviceMetric = new CronJob({
-  cronTime: '*/30 * * * * *',
+  cronTime: '*/15 * * * * *',
   //Runs once a minute, at 30 seconds
   onTick: function() {
-    _aggregator.updateStatistics();
+    async.waterfall([
+      function(callback) {
+        var Device = mongoose.model('Device');
+        Device.count(function(err, count) {
+          callback(null, count);
+        })
+      },
+      function(_count, callback) {
+        _aggregator.updateStatistics(undefined, updateStatisticsPace, function(result) {
+          console.log('[AGGREGATOR] updateStatistics() complete.  Result: [Num Updated: %d, Duration: %d, Average per Device: %d]', result.updated, result.duration, result.average);
+          if (result.average < 5) {  //<5 ms, speed up by 10%
+            updateStatisticsPace = Math.min(_count, Math.floor(updateStatisticsPace * 1.1));
+          } else if (result.average >= 5 && result.average < 10) { //5 < ms < 10, maintain pace
+            updateStatisticsPace = Math.min(_count, updateStatisticsPace);
+          } else {  //>= 10ms, slow down by 2/3, to a min of 10
+            updateStatisticsPace = Math.min(_count, Math.max(updateStatisticsPace_min, Math.floor(updateStatisticsPace * .66)));
+          }
+
+          if (_count === updateStatisticsPace) { console.log('[Aggregator] updateStatistics() - Max pace reached: ' + _count); }
+          console.log('[AGGREGATOR] updateStatistics() Setting new pace: %d', updateStatisticsPace);
+          callback(null, result)
+        });
+      }
+    ], function(err, result) {
+
+    });
   },
   start: false,
   timeZone: 'America/Los_Angeles'
