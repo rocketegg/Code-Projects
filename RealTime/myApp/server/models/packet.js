@@ -377,6 +377,7 @@ var PacketSchema = new Schema({
 /*
 * Indexes
 */
+PacketSchema.index({ 'device.IP_ADDRESS': 1, 'metadata.TYPE': 1, 'data.subtype': 1, 'device.timestamp':1});
 PacketSchema.index({ 'device.IP_ADDRESS': 1, 'metadata.TYPE': 1, 'data.subtype': 1});
 PacketSchema.index({ 'device.timestamp': 1});
 
