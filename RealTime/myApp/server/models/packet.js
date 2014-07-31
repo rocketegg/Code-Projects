@@ -431,7 +431,7 @@ PacketSchema.statics = {
                 }
             }]
           };
-        this.find(query).sort({ _id : 1 }).exec(function(err, packets) {
+        this.find(query, {_id: 0}).sort({ _id : 1 }).exec(function(err, packets) {
             // console.log('[PACKET] compute window for %s has %d packets.', deviceIP, packets.length);
             if (cb)
                 cb(err, packets);
