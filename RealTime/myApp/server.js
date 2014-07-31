@@ -56,9 +56,6 @@ var _sensor = new Sensor();
 var _callCache = new Cache();
 var _packetWriter = new PacketWriter();
 var _deviceCache = new DeviceCache();
-var profiler = require('v8-profiler');
-
-
 
 server.on('error', function (err) {
   console.log('server error:\n' + err.stack);
