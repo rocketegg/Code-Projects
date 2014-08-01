@@ -68,6 +68,29 @@ var Purger = function () {
 
         expireCalls: function(cb) {
             var Call = mongoose.model('Call');
+            //Method 2 to purge calls
+            // var expiration = new Date().getTime() - expirationThreshold;
+            // Call.update({
+            //     $and: [{
+            //         $or: [{
+            //             'metadata.ended.from': false
+            //         }, {
+            //             'metadata.ended.to': false
+            //         }]
+            //     }, {
+            //         'metadata.lastUpdated': {
+            //             $lt: expiration
+            //         }
+            //     }
+            // }, {
+            //     $set: {
+            //         'metadata.ended.from': true,
+            //         'metadata.ended.to': true,
+            //         'endTime': new Date(),
+                    
+            //     }
+            // })
+
             Call.loadActiveCalls(function(err, calls) {
                 if (err) throw err;
                 var currTime = new Date().getTime();
@@ -93,7 +116,7 @@ var Purger = function () {
                         calls[i].save();
                     }
                 }
-            })
+            });
         }
     };
 };

@@ -18,11 +18,17 @@ Filterer.prototype.query = function(lastRun, cb) {
   //console.log('[FILTERER]: Filtering results for range: [%s] to [%s]', new Date(lastRun), new Date());
   try {
     var packets = mongoose.model('Packet');
+    // var query = new mongoose.Query({
+    //   timestamp: {
+    //     $gte: lastRun
+    //   }
+    // }).lean(true);
+
     packets.find({
       timestamp: {
         $gte: lastRun
       }
-    }, function(err, packets) {
+    }).lean(true).exec(function(err, packets) {
       if (err) throw err;
 
       var Reduce = mongoose.model('Reduce');

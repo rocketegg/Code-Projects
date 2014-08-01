@@ -85,13 +85,13 @@ server.on('message', function (msg, rinfo) {
 
       //This function called when call is starting or already started, callStart is the call object
       function (err, callStart) {
-        _callCache.setItem(callStart._id, callStart);
+        //_callCache.setItem(callStart._id, callStart);
       },
 
       //This function called when call was started and call ends, callEnd is the call object
       function (err, callEnd) {
-        _callCache.clearItem(callEnd._id);
-        console.log('Call ended: ', callEnd._id);        
+        //_callCache.clearItem(callEnd._id);
+        //console.log('Call ended: ', callEnd._id);        
       }
     );
 
