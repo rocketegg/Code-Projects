@@ -102,9 +102,9 @@ var CallSchema = new Schema({
 });
 
 //Indexes
-CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1, 'from.highestRTP':1});
-CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1, 'to.highestRTP':1});
-CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1});
+// CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1, 'from.highestRTP':1});
+// CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1, 'to.highestRTP':1});
+// CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1});
 CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1});
 CallSchema.index({ 'to.SSRC': 1, 'from.SSRC': 1});
 CallSchema.index({ 'from.device': 1 });
