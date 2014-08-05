@@ -1,5 +1,6 @@
 'use strict';
 
+//NOTE DEPRECATED AS OF 8/5/2014 
 
 /**
  *  Mean container for dependency injection
@@ -65,7 +66,7 @@ server.on('error', function (err) {
 server.on('message', function (msg, rinfo) {
   console.log('[LISTENER] Received a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s] of size [%d] bytes.', new Date(), msg.length);
   var decoded = _decoder.decode(msg, rinfo);  //decoded is a bundle of decoded packets that eventually will get saved to mongodb (at some point)
-  if (_packetWriter.getCapture().captureOn) {
+  if (_packetWriter.getCaptureOn()) {
     async.parallel([
       function(callback) {
         _packetWriter.write(msg, rinfo);
@@ -116,6 +117,7 @@ server.bind(port, function() {
 	console.log('Node.js server opening socket and listening on port ' + port);
 });
 
+//AGGREGATION MOVED OUT
 // Start aggregating data every 5 seconds
 var _aggregator = new Aggregator();
 var aggregator = new CronJob({

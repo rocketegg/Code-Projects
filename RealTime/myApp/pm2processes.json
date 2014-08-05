@@ -1,9 +1,9 @@
 [{
   "name"        : "main server",
-  "script"      : "server.js",
+  "script"      : "cluster.js",
   "args"        : "['']",
-  "instances"   : "max",
-  "exec_mode"   : "cluster",
+  "instances"   : "1",
+  "exec_mode"   : "fork_mode",
   "ignoreWatch" : ["[\\/\\\\]\\./", "node_modules", "public/system/lib", "packets"],
   "watch"       : "true",
   "cwd"         : "",

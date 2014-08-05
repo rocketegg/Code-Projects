@@ -107,6 +107,10 @@ var PacketWriter = function () {
         }
     };
 
+    this.getCaptureOn = function() {
+        return captureOn;
+    };
+
     this.downloadCapture = function(sessionId) {
 
     };

@@ -240,7 +240,7 @@ var Aggregator = function () {
             var _filterer = new Filterer();
             var lastRun = new Date().getTime() - 5000;
             //console.log('[AGGREGATOR] Aggregating results @ [%s]', new Date());
-            _filterer.query(lastRun);
+            //_filterer.query(lastRun);
             backfillCallData(lastRun);
         },
 
