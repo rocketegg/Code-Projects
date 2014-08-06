@@ -2,7 +2,8 @@ var Aggregator = require ('./server/controllers/util/Aggregator.js'),
 	CronJob = require('cron').CronJob,
 	mongoose = require('mongoose'),
 	appPath = process.cwd(),
-	fs = require('fs');
+	fs = require('fs'),
+	config = require('./server/config/config');
 
 /*
 * Forked process that runs aggregation on a separate core, will be handled by cluster
@@ -37,6 +38,7 @@ var _forkAggregator = (function(numSeconds, dbconfig) {
     if (!numSeconds)
     	numSeconds = 5;
 
+    var dbconfig = dbconfig ? dbconfig : config.db;
     var db = mongoose.connect(dbconfig);
     bootstrapModels();
 
@@ -52,17 +54,28 @@ var _forkAggregator = (function(numSeconds, dbconfig) {
 	  start: false,
 	  timeZone: 'America/Los_Angeles'
 	});
-
-	console.log('Starting up cron job to aggregate packets packets');
 	
+	var started = false;
+	function start() {
+		console.log('Starting up cron job to aggregate packets packets');
+		aggregator.start();
+		started = true;
+	}
+
 	return {
 		start: function() {
-			aggregator.start();
+			if (!started) {
+				start();
+			}
 		},
 		end: function() {
 			aggregator.stop();
 		}
 	}
 });
+
+//COMMENT OUT IF USING cluster.js
+var _aggWorker = new _forkAggregator(5, config.db);
+_aggWorker.start();
 
 module.exports = _forkAggregator;

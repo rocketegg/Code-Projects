@@ -1,6 +1,45 @@
 [{
-  "name"        : "main server",
-  "script"      : "cluster.js",
+  "name"        : "Aggregator",
+  "script"      : "aggregator.js",
+  "args"        : "['']",
+  "instances"   : "1",
+  "exec_mode"   : "cluster",
+  "ignoreWatch" : ["[\\/\\\\]\\./", "node_modules", "public/system/lib", "packets"],
+  "watch"       : "true",
+  "cwd"         : "",
+  "env": {
+      "NODE_ENV": "production",
+      "AWESOME_SERVICE_API_TOKEN": "xxx"
+  }
+},{
+  "name"        : "Device Stats",
+  "script"      : "devicer.js",
+  "args"        : "['']",
+  "instances"   : "1",
+  "exec_mode"   : "cluster",
+  "ignoreWatch" : ["[\\/\\\\]\\./", "node_modules", "public/system/lib", "packets"],
+  "watch"       : "true",
+  "cwd"         : "",
+  "env": {
+      "NODE_ENV": "production",
+      "AWESOME_SERVICE_API_TOKEN": "xxx"
+  }
+},{
+  "name"        : "Http Server",
+  "script"      : "httpserver.js",
+  "args"        : "['']",
+  "instances"   : "1",
+  "exec_mode"   : "cluster",
+  "ignoreWatch" : ["[\\/\\\\]\\./", "node_modules", "public/system/lib", "packets"],
+  "watch"       : "true",
+  "cwd"         : "",
+  "env": {
+      "NODE_ENV": "production",
+      "AWESOME_SERVICE_API_TOKEN": "xxx"
+  }
+},{
+  "name"        : "RTCP Load Balancer",
+  "script"      : "rtcpserver.js",
   "args"        : "['']",
   "instances"   : "1",
   "exec_mode"   : "fork_mode",

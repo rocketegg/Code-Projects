@@ -2,7 +2,6 @@ var express = require('express'),
 	cluster = require("cluster"),
 	os = require("os"),
 	CronJob = require('cron').CronJob,
-	_forkAggregator = require('./aggregator.js'),
 	dgram = require('dgram');
 
 var numCPUs = os.cpus().length;
@@ -10,13 +9,13 @@ var workers = {
 	aggregator: {
 		name: 'aggregator',
 		instances: 1,
-		type: 'secondary',
+		type: 'primary',
 		config: configAggregator
 	},
 	httpserver: {
 		name: 'httpserver',
 		instances: 1,
-		type: 'secondary',
+		type: 'primary',
 		config: configHTTPServer
 	},
 	rtcpmaster: {
@@ -34,7 +33,7 @@ var workers = {
 	devicestats: {
 		name: 'devicestats',
 		instances: 1,
-		type: 'secondary',
+		type: 'primary',
 		config: configDeviceStats
 	}
 };
@@ -45,6 +44,8 @@ if (cluster.isMaster) {
 
 	//Instantiate workers
 	var aggregatorWorkers = [];
+	var primaries = [];
+	var secondaries = [];
 	for (var i = 0; i < workers.aggregator.instances; i++) {
 		var aggregator = cluster.fork({
 			name: workers.aggregator.name, 
@@ -55,6 +56,11 @@ if (cluster.isMaster) {
 			console.log('[CLUSTER] Aggregator is online.');
 		});
 		aggregatorWorkers.push(aggregator);
+		if (workers.aggregator.type === 'primary') {
+			primaries.push(aggregator);
+		} else {
+			secondaries.push(aggregator);
+		}
 	}
 
 	//Instantiate HTTP server
@@ -69,6 +75,11 @@ if (cluster.isMaster) {
 			console.log('[CLUSTER] Http Server is online.');
 		});
 		httpWorkers.push(httpserver);
+		if (workers.httpserver.type === 'primary') {
+			primaries.push(httpserver);
+		} else {
+			secondaries.push(httpserver);
+		}
 	}
 
 	//Instantiate RTCP master collector
@@ -92,6 +103,11 @@ if (cluster.isMaster) {
 			console.log('[CLUSTER] %s is online.', workers.rtcpslave.name);
 	    });
 	    rtcpWorkers.push(rtcpWorker);
+		if (workers.rtcpslave.type === 'primary') {
+			primaries.push(rtcpWorker);
+		} else {
+			secondaries.push(rtcpWorker);
+		}
 	}
 
 	//Instantiate Device Stats Aggregator
@@ -106,33 +122,55 @@ if (cluster.isMaster) {
 			console.log('[CLUSTER] devicestats is online.');
 		});
 		deviceStatsWorkers.push(devicestats);
+		if (workers.devicestats.type === 'primary') {
+			primaries.push(devicestats);
+		} else {
+			secondaries.push(devicestats);
+		}
 	}
 
 	//Sound the starting bell
+
 	rtcpmaster.on('online', function() {
-		console.log('[CLUSTER] RTCP collector master is online.');
-		for (var i = 0; i < rtcpWorkers.length; i++) {
-			rtcpWorkers[i].send('start');
-		}
-		for (var i = 0; i < httpWorkers.length; i++) {
-			httpWorkers[i].send('start');
-		}
-		for (var i = 0; i < aggregatorWorkers.length; i++) {
-			aggregatorWorkers[i].send('start');
-		}
-		for (var i = 0; i < deviceStatsWorkers.length; i++) {
-			deviceStatsWorkers[i].send('start');
-		}
+		primaries.forEach(function(worker) {
+			worker.send('start');
+		});
+		alertSecondaries(primaries, secondaries);
 	});
 
+	function alertSecondaries (primaries, secondaries) {
+		function workersStarted(workers) {
+			var allstarted = true;
+			workers.forEach(function(worker) {
+				if (worker.state === 'none') {
+					allstarted = false;
+				}
+			});
+			return allstarted;
+		}
+		// check if all primaries started first,
+		if (workersStarted(primaries)) {
+			secondaries.forEach(function(worker) {
+				worker.send('start');
+			});
+		} else {
+			console.log('[CLUSTER#MASTER] Waiting for primaries to start...');
+			setTimeout(alertSecondaries, 1000, primaries, secondaries);	
+		}
+		// then alert secondaries
+	}
+
+	
 	configMaster(rtcpWorkers);
 
 	cluster.on('exit', function(worker, code, signal) {
 	    console.log('worker ' + worker.process.pid + ' died');
 	});
 } else if (cluster.isWorker) {
-	console.log('[CLUSTER#SLAVE] Beginning config for worker [%s%d].', cluster.worker.process.env.name, cluster.worker.process.env.instance);
-	workers[cluster.worker.process.env.name].config(cluster.worker);
+	if (workers[cluster.worker.process.env.name]) {
+		console.log('[CLUSTER#SLAVE] Beginning config for worker [%s%d].', cluster.worker.process.env.name, cluster.worker.process.env.instance);
+		workers[cluster.worker.process.env.name].config(cluster.worker);
+	}
 }
 
 //Master Config
@@ -178,31 +216,31 @@ var mongoose = require('mongoose'),
 	config = require('./server/config/config');
 
 function configAggregator(worker) {
+	//var _forkAggregator = require('./aggregator.js'),
 	//bind event handlers
 	worker.on('message', function(msg) {
 		console.log('#[%s]# Receiving message ' + msg, worker.process.env.name + worker.process.env.instance);
 		if (msg === 'start') {
-			var _aggWorker = new _forkAggregator(5, config.db);
-			_aggWorker.start();
+			//var _aggWorker = new _forkAggregator(5, config.db);
+			var _forkAggregator = require('./aggregator.js');
+			//_aggWorker.start();
 		} else if (msg === 'stop') {
 
 		}
 	});
 }
 
-var mean = require('meanio');
+//var mean = require('meanio');
+
+var _localHttpServer;
 function configHTTPServer(worker) {
 	//bind event handlers
 	worker.on('message', function(msg) {
 		console.log('#[%s]# Receiving message ' + msg, worker.process.env.name + worker.process.env.instance);
 
 		if (msg === 'start') {
-			mean.app('RTCP Collector Prototype',{});
-			var db = mongoose.connect(config.db);
-			var app = require('./server/config/system/bootstrap')(passport, db);
-			// Start the app by listening on <port>
-			app.listen(config.port);
-			console.log('Express app started on port ' + config.port);
+			var _httpServer = require('./httpserver.js');
+			//_localHttpServer.start();
 		} else if (msg === 'stop') {
 			//close down connections
 		}
@@ -222,18 +260,18 @@ function configRTCP(worker) {
 		} else if (msg === 'stop') {
 			//close down connections
 		} else { 
-			_localRTCPCollector.process(msg.data, msg.rinfo);
+			if (_localRTCPCollector)
+				_localRTCPCollector.process(msg.data, msg.rinfo);
 		}
 	});
 }
 
-var _deviceStats = require('./devicer.js');
 function configDeviceStats(worker) {
 	worker.on('message', function(msg) {
 		console.log('#[%s]# Receiving message ' + msg, worker.process.env.name + worker.process.env.instance);
 		if (msg === 'start') {
-			var _devicer = new _deviceStats(50, 10, config.db);	//initial pace, pace min
-			_devicer.start(15);
+			var _devicer = require('./devicer.js');	//initial pace, pace min
+			//new _devicer().start(15);
 		} else if (msg === 'stop') {
 			//close down connections
 		}
