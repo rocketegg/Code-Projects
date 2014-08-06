@@ -52,7 +52,7 @@ var _rtcpCollector = (function(dbconfig) {
     if (!dbconfig) {
         dbconfig = config.db;
     }
-    var db = mongoose.createConnection(dbconfig);
+    var db = mongoose.connect(dbconfig);
     bootstrapModels();
 
     //Local dependencies / variables
