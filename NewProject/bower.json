@@ -1,0 +1,30 @@
+{
+  "name": "NewProject",
+  "version": "0.0.1",
+  "homepage": "https://github.com/rocketegg/Code-Projects",
+  "authors": [
+    "Rocketegg <rocketegg@gmail.com>"
+  ],
+  "description": "A New Project",
+  "main": "app.js",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "latest",
+    "angular-resource": "latest",
+    "angular-cookies": "latest",
+    "angular-mocks": "latest",
+    "angular-route": "latest",
+    "bootstrap": "3.0.3",
+    "angular-bootstrap": "0.10.0",
+    "angular-ui-utils": "0.1.1",
+    "angular-ui-router": "#master"
+  }
+}
