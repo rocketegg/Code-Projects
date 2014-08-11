@@ -65,7 +65,8 @@ var CallSchema = new Schema({
             type: Number
         },
         highestRTP: {   //highest RTP packet # received on FROM end
-            type: Number
+            type: Number,
+            default: 0
         },
         device: {
             type: Schema.ObjectId,
@@ -105,10 +106,9 @@ var CallSchema = new Schema({
 // CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1, 'from.highestRTP':1});
 // CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1, 'to.highestRTP':1});
 // CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1, 'to.SSRC': 1, 'from.SSRC': 1});
+CallSchema.index({ 'from.SSRC': 1, 'from.IP_ADDRESS': 1});
 CallSchema.index({ 'metadata.ended.from': 1, 'metadata.ended.to': 1});
 CallSchema.index({ 'to.SSRC': 1, 'from.SSRC': 1});
-CallSchema.index({ 'from.device': 1 });
-CallSchema.index({ 'to.device': 1 });
 
 CallSchema.post('init', function() {
     this._original = this.toObject();

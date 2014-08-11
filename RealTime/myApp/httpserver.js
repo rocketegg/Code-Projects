@@ -4,7 +4,8 @@ var Aggregator = require ('./server/controllers/util/Aggregator.js'),
 	passport = require('passport'),
 	logger = require('mean-logger');
 	appPath = process.cwd(),
-	config = require('./server/config/config');
+	config = require('./server/config/config'),
+	mean = require('meanio');
 
 /*
 * Forked process that runs aggregation on a separate core, will be handled by cluster
@@ -23,11 +24,13 @@ var _httpServer = (function(port, dbconfig) {
 	
 	var started = false;
 	console.log(config.db);
-	var db = mongoose.connect(config.db);
-	var app = require('./server/config/system/bootstrap')(passport, db);
+	
 
 	function start() {
 		// Bootstrap Models, Dependencies, Routes and the app as an express app
+		mean.app('RTCP Collector Prototype',{});
+		var db = mongoose.connect(dbconfig);
+		var app = require('./server/config/system/bootstrap')(passport, db);
 		app.listen(port);
 		console.log('Express app started on port ' + port);
 		started = true;
