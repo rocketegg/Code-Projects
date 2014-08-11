@@ -1,0 +1,4 @@
+node_modules/
+public/statics/javascript
+bower_components/
+*.log
