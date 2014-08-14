@@ -265,26 +265,30 @@ var Aggregator = function () {
                         },  { 'statistics.last_updated': null
                         }]  
                 }).sort({'statistics.last_updated': 1}).limit(updateStatisticsPace).exec(function(err, devices) {    //implement pacing
-                    var numUpdates = devices.length;
-                    var first = numUpdates > 0 ? (devices[0].statistics ? devices[0].statistics.last_updated : 'Never updated') : 'N/A - no devices found';
-                    var last = numUpdates > 0 ? (devices[numUpdates - 1].statistics ? devices[numUpdates - 1].statistics.last_updated : 'Never updated') : 'N/A - no devices found'
-                    console.log('[AGGREGATOR]: Updating statistics for [%d] devices.  Update Range: %s to %s', devices.length, first, last);
+                    if (err) {
+                        throw err;
+                    } else {
+                        var numUpdates = devices.length;
+                        var first = numUpdates > 0 ? (devices[0].statistics ? devices[0].statistics.last_updated : 'Never updated') : 'N/A - no devices found';
+                        var last = numUpdates > 0 ? (devices[numUpdates - 1].statistics ? devices[numUpdates - 1].statistics.last_updated : 'Never updated') : 'N/A - no devices found'
+                        console.log('[AGGREGATOR]: Updating statistics for [%d] devices.  Update Range: %s to %s', devices.length, first, last);
 
-                    var startTime = new Date().getTime();
-                    var counter = numUpdates;
-                    devices.forEach(function(device) {
-                        updateStatistics(device, function() {
-                            counter--;
-                            if (counter === 0) {
-                                var endTime = new Date().getTime();
-                                cb({
-                                    updated: numUpdates,
-                                    duration: endTime - startTime,
-                                    average: (endTime - startTime) / numUpdates
-                                });
-                            }
+                        var startTime = new Date().getTime();
+                        var counter = numUpdates;
+                        devices.forEach(function(device) {
+                            updateStatistics(device, function() {
+                                counter--;
+                                if (counter === 0) {
+                                    var endTime = new Date().getTime();
+                                    cb({
+                                        updated: numUpdates,
+                                        duration: endTime - startTime,
+                                        average: (endTime - startTime) / numUpdates
+                                    });
+                                }
+                            });
                         });
-                    });
+                    }
                 });
             }
         },

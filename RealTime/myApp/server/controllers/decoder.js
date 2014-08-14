@@ -18,7 +18,24 @@ function decode (msg, rinfo) {
         console.log('[DECODE]: Decoding udp message with timestamp: %s.', timestamp);
         var decoded = [];   //This code currently runs synchronously, pushing each decoded packet on the array, which is returned
         decode_packets(msg, rinfo, 0, timestamp, decoded);
-        return decoded; dec
+        var packets = mongoose.model('Packet');
+        //insertion using native collection driver is much faster for packets
+        //console.log(decoded);
+        //TODO: ERROR IS IN CALCAULTE ELEMENT WHICH CALLS THE SAME CALL ON THE MONGO DOCUMENT
+
+        packets.collection.insert(decoded, {
+            continueOnError: false,
+            serializeFunctions: false
+        }, function(err, docs) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('All docs inserted %d into mongoDB:', docs.length);
+                //console.log(docs);
+            }
+            
+        });
+        return decoded;
     } catch (err) {
         throw err;
     }
@@ -43,23 +60,31 @@ function decode_packets(msg, rinfo, offset, timestamp, decoded) {
                 packet.data = decoders[packet.type](msg, offset);    
                 //Ignore packets that couldn't be decoded
                 if (packet.data) {
-                    var Packet = mongoose.model('Packet');
-                    var mongoPacket = new Packet();
-                    mongoPacket.device.IP_ADDRESS = packet.IP;
-                    mongoPacket.metadata.TYPE = packet.type;
-                    mongoPacket.metadata.LENGTH = packet.packet_length;
-                    mongoPacket.data = packet.data;
-                    mongoPacket.timestamp = timestamp;
-                    mongoPacket.save(function(err, packet) {
-                        console.log('\tDone inserting ' + packet._id + ' into mongodb.');
-                    });
+                    var _pushPacket = {};
+                    _pushPacket.metadata = {};
+                    _pushPacket.device = {};
+                    _pushPacket.device.IP_ADDRESS = packet.IP;
+                    _pushPacket.metadata.TYPE = packet.type;
+                    _pushPacket.metadata.LENGTH = packet.packet_length;
+                    _pushPacket.data = packet.data;
+                    _pushPacket.timestamp = new Date();
+                    // var Packet = mongoose.model('Packet');
+                    // var mongoPacket = new Packet();
+                    // mongoPacket.device.IP_ADDRESS = packet.IP;
+                    // mongoPacket.metadata.TYPE = packet.type;
+                    // mongoPacket.metadata.LENGTH = packet.packet_length;
+                    // mongoPacket.data = packet.data;
+                    // mongoPacket.timestamp = timestamp;
+                    // mongoPacket.save(function(err, packet) {
+                    //     console.log('\tDone inserting ' + packet._id + ' into mongodb.');
+                    // });
 
                     //if (packet.type === 204 && packet.data.subtype === 5 || packet.data.subtype === 4)    //only print sender/receiver reports
-                    if (packet.type === 203)
-                        console.log(JSON.stringify(packet, undefined, 2));
+                    //if (packet.type === 203)
+                    //    console.log(JSON.stringify(packet, undefined, 2));
 
                     //TODO: can make this run asynchronously
-                    decoded.push(mongoPacket);
+                    decoded.push(_pushPacket);
                 } else {
                     console.log('\tError: Packet could not be decoded. ');
                 }
@@ -206,7 +231,6 @@ function decode_203(msg, offset) {
         var ssrc_offset = offset + (4 * (i + 1));
         data.ssrc.push(msg.readUInt32BE(ssrc_offset));
     }
-    //console.log(data);
     //extra optional reason included
     if (data.length > data.src_count) {
         var len_start = offset + 4 + (data.src_count * 4);

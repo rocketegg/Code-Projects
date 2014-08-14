@@ -145,7 +145,7 @@ function getIeEff(averages, codec) {
 		Ppl = 0;
 	}
 	if (Bpl == undefined || Ie == undefined) {
-		console.log("Bpl: " + Bpl + "   ie: " + Ie);
+		//console.log("Bpl: " + Bpl + "   ie: " + Ie);
 		return 0;
 	}
 	var BurstR = 1;	//shark only considers BurstR = 1 (random), but it can be > 1 when packet loss is bursty rather than random

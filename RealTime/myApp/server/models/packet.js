@@ -416,25 +416,8 @@ PacketSchema.statics = {
         if (endTime instanceof Date) {
             endTime = endTime.getTime();
         }
-
-        // var query = new mongoose.Query({ 
-        //     $and: [{ 
-        //           'device.IP_ADDRESS': deviceIP
-        //         }, {
-        //           'metadata.TYPE': 204
-        //         },{
-        //           'data.subtype': 4
-        //         },{
-        //           'timestamp': { 
-        //             $gte: new Date(startTime), 
-        //             $lte: new Date(endTime) 
-        //         }
-        //     }]
-        //   }, {
-        //     _id: 0
-        //   }).lean(true);
         
-        this.find({ 
+        this.collection.find({ 
             $and: [{ 
                   'device.IP_ADDRESS': deviceIP
                 }, {
@@ -449,8 +432,8 @@ PacketSchema.statics = {
             }]
           }, {
             _id: 0
-          }).lean().sort({ _id : 1 }).exec(function(err, packets) {
-            // console.log('[PACKET] compute window for %s has %d packets.', deviceIP, packets.length);
+          }).sort({ _id : 1 }).toArray(function(err, packets) {
+            console.log('[PACKET] compute window for %s has %d packets.', deviceIP, packets.length);
             if (cb)
                 cb(err, packets);
         });
