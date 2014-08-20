@@ -4,7 +4,8 @@
  * Module dependencies.
  */
 var MapReduce = require('./util/MapReduce.js'),
-    Analytic = require('./util/Analytic.js');
+    Analytic = require('./util/Analytic.js'),
+    async = require('async');
 
 exports.reduce = function(req, res) {
     console.log('[ANALYTICS] Beginning MapReduce for high/low/average.');
@@ -77,18 +78,43 @@ exports.window = function(req, res) {
     console.log('[ANALYTICS] Returning metric interval for IPs %s.', req.query.IP_ADDRESS);
     var _analytic = new Analytic();
     var IPs = splitIPs(req.query.IP_ADDRESS);
+    var self = {
+        IPs: IPs,
+        countdown: IPs.length,
+        response: {}
+    };
 
-    var countdown = IPs.length;
     var response = {};
-    for (var i = 0; i < IPs.length; i++) {
-        _analytic.computeMetrics(IPs[i], function(metrics) {
-            response[IPs[i]] = metrics;
-            countdown--;
-            if (countdown === 0) {
-                res.jsonp({
-                    active_devices: response
-                });
-            }
+
+    var asyncFunctions = [];
+    IPs.forEach(function(IP) {
+        IP = IP.trim();
+        asyncFunctions.push(function(callback) {
+            _analytic.computeMetrics(IP, function(err, metrics) {
+                var response = {};
+                response[IP] = metrics;
+                callback(err, response);
+            });
         });
-    }
+    })
+
+    async.parallel(asyncFunctions, function(err, results) {
+        var response = {};
+        for (var i = 0; i < results.length; i++) {
+            var key = Object.keys(results[i])[0];
+            response[key] = results[i][key];
+        }
+        res.jsonp({
+            active_devices: response
+        });
+    });
 };
+
+
+
+
+
+
+
+
+

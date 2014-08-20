@@ -255,7 +255,7 @@ function configRTCP(worker) {
 	worker.on('message', function(msg) {
 		console.log('#[%s]# Receiving message ' + msg, worker.process.env.name + worker.process.env.instance);
 		if (msg === 'start') {
-			_localRTCPCollector = new _rtcpCollector(config.db);
+			_localRTCPCollector = new _rtcpCollector(worker.process.env.name + worker.process.env.instance, config.db);
 			_localRTCPCollector.start(worker.process.env.name + worker.process.env.instance);
 		} else if (msg === 'stop') {
 			//close down connections

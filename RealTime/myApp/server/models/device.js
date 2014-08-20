@@ -24,7 +24,7 @@ var DeviceSchema = new Schema({
             trim: true
         },
         SDES: {},
-        SSRC: [Number]   //all known SSRCs
+        SSRC: [Number],   //all known SSRCs
     },
 
     //These will be backfilled over time
@@ -54,7 +54,8 @@ var DeviceSchema = new Schema({
             summary: {}
         },
         last_updated: {
-            type: Date
+            type: Date,
+            default: Date.now
         }
     },
 
@@ -79,6 +80,8 @@ var DeviceSchema = new Schema({
         }
     }
 });
+
+DeviceSchema.index({'statistics.last_updated': 1});
 
 //Backfill 1, 5 and 10 minutes based on hourly data
 DeviceSchema.pre('save', function(next) {

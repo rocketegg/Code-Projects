@@ -23,7 +23,10 @@ module.exports = function(passport, db) {
                 }
             });
         };
+
+        var models_path_packages = appPath + '/packages/aggregates/server/models';
         walk(models_path);
+        walk(models_path_packages);
     }
 
     bootstrapModels();

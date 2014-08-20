@@ -433,7 +433,7 @@ PacketSchema.statics = {
           }, {
             _id: 0
           }).sort({ _id : 1 }).toArray(function(err, packets) {
-            console.log('[PACKET] compute window for %s has %d packets.', deviceIP, packets.length);
+            //console.log('[PACKET] compute window for %s has %d packets.', deviceIP, packets.length);
             if (cb)
                 cb(err, packets);
         });

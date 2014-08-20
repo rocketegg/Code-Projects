@@ -25,7 +25,7 @@ function backfillCallData(lastRun) {
     Call.find(query, function(err, calls) {
         if (err) throw err;
         if (calls.length > 0) {
-            //console.log('[AGGREGATOR]: Backfilling call data for [%d] new expired calls.', calls.length);
+            console.log('[AGGREGATOR]: Backfilling call data for [%d] new expired calls.', calls.length);
             calls.forEach(function(call) {
                 updateCallStatistics(call);
             });
@@ -138,7 +138,7 @@ function updateCallStatistics(call, cb) {
 //  is older than the stalenessThreshold.
 //  
 //  Documented: AMH 6/9/2014
-function updateStatistics(device, cb) {
+function updateDeviceStatistics(device, cb) {
     var _analytic = new Analytic();
     var currTimestamp = new Date().getTime();
     //console.log('[AGGREGATOR]: Computing metrics for device %s.', device.metadata.IP_ADDRESS);
@@ -222,6 +222,8 @@ function updateStatistics(device, cb) {
 
             //4 - Store
             device.statistics.last_hour.rollup.push(store);
+
+            //TODO: NORMALIZE TIME STAMP - IS PUSHING 6:30 WHEN TIME IS 11:30, 7 HR DIFFERENCE AHEAD
             device.statistics.last_updated = store.endTime;
         }
         //console.log('\tSaving device hour stats for device %s IP: %s.  New size is %d.', device._id, device.metadata.IP_ADDRESS, device.statistics.last_hour.rollup.length);
@@ -229,19 +231,38 @@ function updateStatistics(device, cb) {
     });
 }
 
+function runAggregates() {
+
+    var Aggregate = mongoose.model('Aggregate');
+
+    Aggregate.find({
+        nextRun: {
+            $lt: new Date().getTime()
+        }
+    }).exec(function (err, aggregates) {
+        aggregates.forEach(function(aggregate) {
+            aggregate.run(function(err, result) {
+                console.log('[AGGREGATOR]: %s done running.  Next scheduled run time is: %s', aggregate.name, aggregate.nextRun);
+            })
+        })
+    });
+}
+
 //stalenessThreshold (MAX: 60000)
 //this is the minimum threshold to kick off a new backfilling update (1 minute by default)
 var stalenessThreshold = 60000; 
 var Aggregator = function () {
+
     return {
-        //TODO serialize these through call backs
         aggregateAll: function(cb) {
             var _reducer = new Reducer();
             var _filterer = new Filterer();
             var lastRun = new Date().getTime() - 5000;
-            //console.log('[AGGREGATOR] Aggregating results @ [%s]', new Date());
             //_filterer.query(lastRun);
             backfillCallData(lastRun);
+
+
+
         },
 
         //Updates all devices in devices collection, if no devices, does nothing
@@ -254,19 +275,15 @@ var Aggregator = function () {
                 }, function(err, device) {
                     if (err) throw err;
                     if (device) {
-                        updateStatistics(device, cb);
+                        updateDeviceStatistics(device, cb);
                     }
                 });
             } else {
                 var timeToUpdate = new Date().getTime();
-                Device.find({
-                    $or: [  { 'statistics.last_updated': { $lt: timeToUpdate - stalenessThreshold }
-                        },  { 'statistics.last_updated': { $gt: timeToUpdate}  //upon initialization -- maybe
-                        },  { 'statistics.last_updated': null
-                        }]  
-                }).sort({'statistics.last_updated': 1}).limit(updateStatisticsPace).exec(function(err, devices) {    //implement pacing
+                console.log(new Date().getTime())
+                Device.find({}).sort('statistics.last_updated').limit(updateStatisticsPace).exec(function(err, devices) {    //implement pacing
                     if (err) {
-                        throw err;
+                        console.log('[AGGREGATOR] ERROR: ' + err);
                     } else {
                         var numUpdates = devices.length;
                         var first = numUpdates > 0 ? (devices[0].statistics ? devices[0].statistics.last_updated : 'Never updated') : 'N/A - no devices found';
@@ -276,7 +293,7 @@ var Aggregator = function () {
                         var startTime = new Date().getTime();
                         var counter = numUpdates;
                         devices.forEach(function(device) {
-                            updateStatistics(device, function() {
+                            updateDeviceStatistics(device, function() {
                                 counter--;
                                 if (counter === 0) {
                                     var endTime = new Date().getTime();

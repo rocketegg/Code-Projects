@@ -23,7 +23,7 @@ var config = require('./server/config/config');
 * Author: Al Ho
 * Updated: 8/4/2014
 */
-var _rtcpCollector = (function(dbconfig) {
+var _rtcpCollector = (function(name, dbconfig) {
     if (_rtcpCollector.prototype._singletonInstance) {
         return _rtcpCollector.prototype._singletonInstance;
     }
@@ -53,6 +53,29 @@ var _rtcpCollector = (function(dbconfig) {
         dbconfig = config.db;
     }
     var db = mongoose.connect(dbconfig);
+
+    //include postgres connection
+    // var pg = require('pg');
+    // var conString = "postgres://postgres:Clarus_User_1@localhost/ucx";
+
+    // pg.connect(conString, function(err, client, done) {
+    //   if(err) {
+    //     return console.error('error fetching client from pool', err);
+    //   }
+    //   client.query('SELECT $1::int AS number', ['1'], function(err, result) {
+    //     //call `done()` to release the client back to the pool
+    //     done();
+
+    //     if(err) {
+    //       return console.error('error running query', err);
+    //     }
+    //     console.log(result.rows[0].number);
+    //     //output: 1
+    //   });
+    // });
+
+
+    var name = name;
     bootstrapModels();
 
     //Local dependencies / variables
@@ -70,7 +93,7 @@ var _rtcpCollector = (function(dbconfig) {
     }
 
     function process(msg, rinfo) {
-        console.log('[RTCP Collector] Received a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s] of size [%d] bytes.', new Date(), msg.length);
+        console.log('[%s] Received a message from ' + rinfo.address + ':' + rinfo.port + ' @ [%s] of size [%d] bytes.', name, new Date(), msg.length);
         var buffer = new Buffer(msg);
         var decoded = _decoder.decode(buffer, rinfo);  //decoded is a bundle of decoded packets that eventually will get saved to mongodb (at some point)
         if (_packetWriter.getCaptureOn()) {
@@ -82,28 +105,17 @@ var _rtcpCollector = (function(dbconfig) {
             });
         }
         //1 - register device
-        if (!_decoderCache.hasKey(rinfo.address)) {
-            var Device = mongoose.model('Device');
-            Device.registerIfNecessary(rinfo.address);
-        }
+        var Device = mongoose.model('Device');
+        Device.registerIfNecessary(rinfo.address);
 
         //2 - track calls
-        _sensor.trackCall(_decoderCache.filterAndStripByType(rinfo.address, 204, 4), decoded,
-
+        _sensor.trackCall(decoded,
           //This function called when call is starting or already started, callStart is the call object
-          function (err, callStart) {
-            //_callCache.setItem(callStart._id, callStart);
-          },
+          function (err, callStart) {},
 
           //This function called when call was started and call ends, callEnd is the call object
-          function (err, callEnd) {
-            //_callCache.clearItem(callEnd._id);
-            //console.log('Call ended: ', callEnd._id);        
-          }
+          function (err, callEnd) {}
         );
-
-        //3 - add to decoder cache
-        _decoderCache.pushPackets(rinfo.address, decoded);
 
         //4 - backfill device info, this should only be done every so often (202 is an SDES packet)
         var idx = decoded.map(function(packet) { return packet.metadata.TYPE; }).indexOf(202);
@@ -114,7 +126,7 @@ var _rtcpCollector = (function(dbconfig) {
 
     return {
         start: function(id) {
-            console.log('[RTCP Collector] Starting up. [%s]', id);
+            console.log('[%s] Starting up. [%s]', name, id);
             start(id);
         },
 

@@ -48,7 +48,7 @@ var _forkAggregator = (function(numSeconds, dbconfig) {
 	  cronTime: '*/' + numSeconds + ' * * * * *',
 	  //Runs every 5 seconds
 	  onTick: function() {
-	  	console.log('Running aggregation.');
+	  	//console.log('Running aggregation.');
 	  	_aggregator.aggregateAll();
 	  },
 	  start: false,

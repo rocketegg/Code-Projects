@@ -15,13 +15,10 @@ var decoders = {
 function decode (msg, rinfo) {
     try {
         var timestamp = new Date().getTime();
-        console.log('[DECODE]: Decoding udp message with timestamp: %s.', timestamp);
+        console.log('[DECODER]: Decoding udp message with timestamp: %s.', timestamp);
         var decoded = [];   //This code currently runs synchronously, pushing each decoded packet on the array, which is returned
         decode_packets(msg, rinfo, 0, timestamp, decoded);
         var packets = mongoose.model('Packet');
-        //insertion using native collection driver is much faster for packets
-        //console.log(decoded);
-        //TODO: ERROR IS IN CALCAULTE ELEMENT WHICH CALLS THE SAME CALL ON THE MONGO DOCUMENT
 
         packets.collection.insert(decoded, {
             continueOnError: false,
@@ -30,10 +27,8 @@ function decode (msg, rinfo) {
             if (err) {
                 console.log(err);
             } else {
-                console.log('All docs inserted %d into mongoDB:', docs.length);
-                //console.log(docs);
+                console.log('[DECODER] Persistence - All [%d] docs inserted into mongoDB.', docs.length);
             }
-            
         });
         return decoded;
     } catch (err) {
@@ -68,22 +63,6 @@ function decode_packets(msg, rinfo, offset, timestamp, decoded) {
                     _pushPacket.metadata.LENGTH = packet.packet_length;
                     _pushPacket.data = packet.data;
                     _pushPacket.timestamp = new Date();
-                    // var Packet = mongoose.model('Packet');
-                    // var mongoPacket = new Packet();
-                    // mongoPacket.device.IP_ADDRESS = packet.IP;
-                    // mongoPacket.metadata.TYPE = packet.type;
-                    // mongoPacket.metadata.LENGTH = packet.packet_length;
-                    // mongoPacket.data = packet.data;
-                    // mongoPacket.timestamp = timestamp;
-                    // mongoPacket.save(function(err, packet) {
-                    //     console.log('\tDone inserting ' + packet._id + ' into mongodb.');
-                    // });
-
-                    //if (packet.type === 204 && packet.data.subtype === 5 || packet.data.subtype === 4)    //only print sender/receiver reports
-                    //if (packet.type === 203)
-                    //    console.log(JSON.stringify(packet, undefined, 2));
-
-                    //TODO: can make this run asynchronously
                     decoded.push(_pushPacket);
                 } else {
                     console.log('\tError: Packet could not be decoded. ');

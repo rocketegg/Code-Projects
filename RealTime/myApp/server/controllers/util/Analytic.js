@@ -328,7 +328,7 @@ function getCorrectedPPl(ppl, codec) {
 		var b = correction_coefficients[codec].b * Math.pow((ppl - correction_coefficients[codec].c), 2) - correction_coefficients[codec].d;
 		var c = ppl * correction_coefficients[codec].e;
 		var correction_Factor = (a + b + c);
-		console.log('Correction Factor: ' + correction_Factor);
+		//console.log('Correction Factor: ' + correction_Factor);
 		return correction_Factor;
 	}
 }
@@ -607,20 +607,30 @@ var Analytic = function () {
 
     //Compute Metrics in between two packets
     this.computeMetrics = function(deviceIP, cb) {
-    	var cache = DecoderCache();
-    	var filtered = cache.filterAndStripByType(deviceIP, 204, 4);
-    	var metrics = computeMetrics(filtered);
-    	if (cb)
-    		cb(metrics);
+    	//console.log('Computing Metrics for %s' + deviceIP);
+    	var Packet = mongoose.model('Packet');
+    	var currTime = new Date().getTime();
+    	var startTime = new Date(currTime - 60000);
+    	Packet.sliceByIP(deviceIP, startTime, currTime, function(err, filtered) {
+			var metrics = computeMetrics(filtered);
+	    	if (cb)
+	    		cb(err, metrics);
+    	});
+    	
     };
 
     //Compute MOS scores for a device
     this.computeMOS = function(deviceIP, cb) {
-    	var cache = DecoderCache();
-    	var filtered = cache.filterAndStripByType(deviceIP, 204, 4);
-    	var mos = computeMOS(filtered);
-    	if (cb)
-    		cb(mos);
+    	//var cache = DecoderCache();
+    	//var filtered = cache.filterAndStripByType(deviceIP, 204, 4);
+    	var Packet = mongoose.model('Packet');
+    	var currTime = new Date().getTime();
+    	var startTime = new Date(currTime - 60000);
+    	Packet.sliceByIP(deviceIP, startTime, currTime, function(err, filtered) {
+	    	var mos = computeMOS(filtered);
+	    	if (cb)
+	    		cb(mos);
+	    });
     };
 
     //Compute Metrics for a moving window

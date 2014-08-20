@@ -67,7 +67,7 @@ exports.find = function(req, res) {
 //      IP_ADDRESS: an IP address
 exports.findsummarybyip = function(req, res) {
     var deviceIP = req.query.IP_ADDRESS;
-    Device.loadSummaryByIP(deviceIP, function(err, device) {
+    Device.loadSummaryByIP(deviceIP.trim(), function(err, device) {
         if (err) {
             res.send(500, {
                 error: err

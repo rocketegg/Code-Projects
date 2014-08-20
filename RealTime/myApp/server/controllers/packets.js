@@ -220,7 +220,7 @@ exports.slice = function(req, res) {
 
 //Turns packet capture on
 exports.capturestatus = function(req, res) {
-    var _instance = PacketWriter();
+    var _instance = new PacketWriter();
 
     res.send(200, { 
         status: _instance.getCapture()
@@ -230,7 +230,7 @@ exports.capturestatus = function(req, res) {
 
 //Turns packet capture on
 exports.captureon = function(req, res) {
-    var _instance = PacketWriter();
+    var _instance = new PacketWriter();
     _instance.setCapture(true);
 
     res.send(200, {
@@ -240,7 +240,7 @@ exports.captureon = function(req, res) {
 
 //Turns packet capture off
 exports.captureoff = function(req, res) {
-    var _instance = PacketWriter();
+    var _instance = new PacketWriter();
     _instance.setCapture(false);
 
     res.send(200, {

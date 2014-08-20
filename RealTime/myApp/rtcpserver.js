@@ -54,7 +54,7 @@ var _rtcpServer = (function() {
 	var _rtcpDecoder;
 	function start_slave(worker) {
 		var _rtcpCollector = require('./rtcp.js');
-		_rtcpDecoder = new _rtcpCollector(config.db);
+		_rtcpDecoder = new _rtcpCollector(worker.process.env.name + worker.process.env.instance, config.db);
 
 		worker.on('message', function(msg) {
 			console.log('#[%s]# Receiving message ' + msg, worker.process.env.name + worker.process.env.instance);

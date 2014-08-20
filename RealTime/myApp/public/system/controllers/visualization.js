@@ -6,7 +6,7 @@ angular.module('mean.system').controller('VisualizationController',
 
     $scope.global = Global;
     $scope.options = {
-        IP_ADDRESS: '127.0.0.1'
+        IP_ADDRESS: ''
     };
 
     $scope.viz = {};

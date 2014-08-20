@@ -5,11 +5,26 @@
   "private": false,
   "author": "Linnovate <mean@linnovate.net>",
   "contributors": [
-    {"name":"Lior Kesos", "mail": "lior@linnovate.net"},
-    {"name":"Yonatan Ellman", "mail": "yonatan@linnovate.net"},
-    {"name":"Ehud Shahak", "mail": "ehud@linnovate.net"},
-    {"name":"Amos Haviv", "mail": "mail@amoshaviv"},
-    {"name":"Drew Fyock", "mail": "drew@steelbisondev.com"}
+    {
+      "name": "Lior Kesos",
+      "mail": "lior@linnovate.net"
+    },
+    {
+      "name": "Yonatan Ellman",
+      "mail": "yonatan@linnovate.net"
+    },
+    {
+      "name": "Ehud Shahak",
+      "mail": "ehud@linnovate.net"
+    },
+    {
+      "name": "Amos Haviv",
+      "mail": "mail@amoshaviv"
+    },
+    {
+      "name": "Drew Fyock",
+      "mail": "drew@steelbisondev.com"
+    }
   ],
   "repository": {
     "type": "git",
@@ -55,7 +70,8 @@
     "pm2": "~0.8.11",
     "tar": "latest",
     "fstream": "latest",
-    "temp": "latest"
+    "temp": "latest",
+    "pg": "^3.4.1"
   },
   "devDependencies": {
     "assetmanager": "0.1.2",

@@ -65,7 +65,7 @@ var _deviceStats = (function(paceStart, paceMin, interval, dbconfig) {
               function(_count, callback) {
                 _aggregator.updateStatistics(undefined, updateStatisticsPace, function(result) {
                   console.log('[DEVICE STATS] updateStatistics() complete.  Result: [Num Updated: %d, Duration: %d, Average per Device: %d]', result.updated, result.duration, result.average);
-                  if (result.average < 5) {  //<5 ms, speed up by 10%
+                  if (result.average < 5 && result.duration < 1000) {  //<5 ms, speed up by 10%
                     updateStatisticsPace = Math.min(_count, Math.floor(updateStatisticsPace * 1.1));
                   } else if (result.average >= 5 && result.average < 10) { //5 < ms < 10, maintain pace
                     updateStatisticsPace = Math.min(_count, updateStatisticsPace);
@@ -73,7 +73,9 @@ var _deviceStats = (function(paceStart, paceMin, interval, dbconfig) {
                     updateStatisticsPace = Math.min(_count, Math.max(updateStatisticsPace_min, Math.floor(updateStatisticsPace * .66)));
                   }
 
-                  if (_count === updateStatisticsPace) { console.log('[AGGREGATOR] updateStatistics() - Max pace reached: ' + _count); }
+                  if (_count === updateStatisticsPace) { 
+                    console.log('[AGGREGATOR] updateStatistics() - Max pace reached: ' + _count); 
+                  }
                   console.log('[DEVICE STATS] updateStatistics() Setting new pace: %d', updateStatisticsPace);
                   callback(null, result)
                 });
